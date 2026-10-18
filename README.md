@@ -18,6 +18,16 @@ the camera is real, detections are simulated, and saved scans stay in the browse
 Browsers only allow camera access on HTTPS (or `localhost`). To test on a phone while developing, run
 `npm run dev:phone` and open the HTTPS address it prints. Deployed to Vercel, HTTPS is automatic.
 
+## Backend
+
+The API lives in its own repository, [Scan4Resource-backend](https://github.com/Reazul-Islam-Fahim/Scan4Resource-backend).
+Run it, then either:
+
+- set `VITE_API_URL` to its base URL (for example `http://localhost:8000`) and add this app's origin
+  (for example `http://localhost:5173`) to the backend's `ALLOWED_ORIGINS`, or
+- during development, set `VITE_API_URL=/api` and `API_TARGET=http://localhost:8000` in `.env.local`. The dev
+  server then forwards `/api/...` to the backend, so no CORS setup is needed.
+
 ## The flow
 
 `Home → Camera → Detected items → Reuse Report → Marketplace` (and a Map of material sources)
@@ -116,11 +126,11 @@ Called when the report is generated. JSON body:
 
 `GET` returns saved scans, newest first, as an array or `{ "scans": [...] }`, each in the shape above plus
 `created_at`. `DELETE` returns `204`, or `404` if the scan does not exist. Errors of the form `{ "detail": "..." }`
-are shown to the person. The backend must allow CORS from your Vercel domain.
+are shown to the person. The backend must allow CORS from your Vercel domain (its `ALLOWED_ORIGINS` setting).
 
 ## Deploy to Vercel
 
-1. Push this folder to a Git repository and import it in Vercel. The Vite preset is detected automatically.
+1. Import this repository in Vercel. The Vite preset is detected automatically.
 2. Add the environment variable `VITE_API_URL` (your backend's base URL, no trailing slash).
 3. Deploy. Variables prefixed `VITE_` are baked in at build time, so redeploy after changing them.
 
