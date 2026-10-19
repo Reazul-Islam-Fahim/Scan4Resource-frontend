@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { describeError, isMock, uploadWalkthrough } from '../lib/api'
 import { plural } from '../lib/format'
-import CaptureCamera from './CaptureCamera'
-import { CameraIcon, CheckIcon, ChevronRight, CloseIcon, FilmIcon, ImagesIcon, InfoIcon, UploadIcon, VideoIcon } from './Icons'
+import { CheckIcon, ChevronRight, InfoIcon } from './Icons'
 import PageHeader from './PageHeader'
 
 // What the server does after the upload, in order. `stage` from the server names the step it is on.
@@ -26,146 +25,59 @@ function megabytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`
 }
 
-function Picker({ scanId, onJob }) {
-  const [files, setFiles] = useState([])
-  const [progress, setProgress] = useState(null) // null, or 0..1 while uploading
+/** Uploads what the camera captured as soon as the page opens; on failure, offers to try again. */
+function Uploader({ files, scanId, onJob, onRescan }) {
+  const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
-  const [camera, setCamera] = useState(null) // null, or 'video' / 'photo' while the app's camera is open
-  const abort = useRef(null)
+  const started = useRef(false)
 
-  useEffect(() => () => abort.current?.abort(), [])
+  const total = files.reduce((sum, file) => sum + file.size, 0)
 
-  const addFiles = (picked) => {
-    setFiles((current) => [...current, ...picked.filter((f) => !current.some((c) => c.name === f.name && c.size === f.size))])
-    setError('')
-  }
-
-  const add = (event) => {
-    const picked = [...(event.target.files ?? [])]
-    event.target.value = '' // picking the same file again still fires
-    addFiles(picked)
-  }
-
+  // Not cancelled when the page is left: the job still reaches the session and keeps being followed.
   const upload = async () => {
-    abort.current = new AbortController()
     setProgress(0)
     setError('')
     try {
-      const job = await uploadWalkthrough(files, { scanId, onProgress: setProgress, signal: abort.current.signal })
-      onJob(job)
+      onJob(await uploadWalkthrough(files, { scanId, onProgress: setProgress }))
     } catch (err) {
-      if (!abort.current?.signal.aborted) setError(describeError(err))
-      setProgress(null)
+      setError(describeError(err))
     }
   }
 
-  const total = files.reduce((sum, file) => sum + file.size, 0)
-  const uploading = progress !== null
+  useEffect(() => {
+    if (started.current) return // StrictMode runs effects twice in development: upload once
+    started.current = true
+    upload()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (camera) {
+  if (error) {
     return (
-      <CaptureCamera
-        initialMode={camera}
-        onCancel={() => setCamera(null)}
-        onDone={(captured) => {
-          addFiles(captured)
-          setCamera(null)
-        }}
-      />
+      <>
+        <p className="error">The upload failed. {error}</p>
+        <div className="cta-bar">
+          <div className="cta-inner upload-actions">
+            <button type="button" className="btn btn-primary btn-block" onClick={upload}>
+              Try again
+            </button>
+            <button type="button" className="btn btn-secondary btn-block" onClick={onRescan}>
+              Scan again
+            </button>
+          </div>
+        </div>
+      </>
     )
   }
 
-  const tile = `upload-tile${uploading ? ' disabled' : ''}`
-
   return (
-    <>
-      <p className="lede upload-lede">
-        Film a slow walk through the space, or take photos. The server builds a 3D model, then counts and measures what
-        it finds. Videos and photos can be mixed.
-      </p>
-
-      <h2 className="upload-group">With the app's camera</h2>
-      <div className="upload-pick">
-        <button type="button" className={tile} onClick={() => setCamera('video')} disabled={uploading}>
-          <VideoIcon />
-          <strong>Record video</strong>
-          <span>Walk through the room</span>
-        </button>
-        <button type="button" className={tile} onClick={() => setCamera('photo')} disabled={uploading}>
-          <CameraIcon />
-          <strong>Take photos</strong>
-          <span>As many as you like</span>
-        </button>
+    <div className="upload-progress job-steps" role="status">
+      <strong>
+        Uploading {plural(files.length, 'file')} ({megabytes(total)})
+      </strong>
+      <div className="progress-track">
+        <div className="progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
       </div>
-
-      <h2 className="upload-group">From this device</h2>
-      <div className="upload-pick">
-        <label className={tile}>
-          <FilmIcon />
-          <strong>Upload videos</strong>
-          <span>From your gallery or files</span>
-          <input type="file" accept="video/*" multiple onChange={add} disabled={uploading} hidden />
-        </label>
-        <label className={tile}>
-          <ImagesIcon />
-          <strong>Upload photos</strong>
-          <span>From your gallery or files</span>
-          <input type="file" accept="image/*" multiple onChange={add} disabled={uploading} hidden />
-        </label>
-      </div>
-
-      {files.length > 0 && (
-        <ul className="upload-files">
-          {files.map((file) => (
-            <li key={`${file.name}-${file.size}`}>
-              <span className="upload-file-name">{file.name}</span>
-              <span className="note">{megabytes(file.size)}</span>
-              {!uploading && (
-                <button
-                  type="button"
-                  className="icon-btn icon-btn-plain"
-                  onClick={() => setFiles((current) => current.filter((f) => f !== file))}
-                  aria-label={`Remove ${file.name}`}
-                >
-                  <CloseIcon />
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <ul className="upload-tips note">
-        <li>Walk slowly and film every wall once. Keep doors and windows fully in the frame.</li>
-        <li>About 30 seconds to 2 minutes of video is plenty for one room.</li>
-      </ul>
-
-      {error && <p className="error">{error}</p>}
-
-      <div className="cta-bar">
-        <div className="cta-inner">
-          {uploading ? (
-            <div className="upload-progress" role="status">
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
-              </div>
-              <div className="upload-progress-row">
-                <span>Uploading {Math.round(progress * 100)}% of {megabytes(total)}</span>
-                <button type="button" className="text-btn danger" onClick={() => abort.current?.abort()}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-primary btn-block btn-arrow" onClick={upload} disabled={files.length === 0}>
-              <UploadIcon />
-              <span>{files.length ? `Upload ${plural(files.length, 'file')} (${megabytes(total)})` : 'Pick a video or photos'}</span>
-              <ChevronRight />
-            </button>
-          )}
-        </div>
-      </div>
-    </>
+      <span className="note">{Math.round(progress * 100)}%. Keep this page open until the upload is done.</span>
+    </div>
   )
 }
 
@@ -194,7 +106,7 @@ function Processing({ job }) {
   )
 }
 
-function Done({ job, itemCount, onReview, onReset }) {
+function Done({ job, itemCount, onReview, onRescan }) {
   return (
     <>
       <div className="reuse-banner">
@@ -240,8 +152,8 @@ function Done({ job, itemCount, onReview, onReset }) {
               <ChevronRight />
             </button>
           ) : (
-            <button type="button" className="btn btn-primary btn-block" onClick={onReset}>
-              Upload something else
+            <button type="button" className="btn btn-primary btn-block" onClick={onRescan}>
+              Scan again
             </button>
           )}
         </div>
@@ -251,26 +163,34 @@ function Done({ job, itemCount, onReview, onReset }) {
 }
 
 /** Upload a walkthrough, follow its processing on the server, then go on to review the items. */
-export default function Upload({ scanId, job, itemCount, onJob, onReset, onBack, onReview }) {
+export default function Upload({ scanId, files, job, itemCount, onJob, onRescan, onBack, onReview }) {
   return (
     <section className="flow upload">
-      <PageHeader title="Upload a walkthrough" onBack={onBack} />
+      <PageHeader title={job ? "Processing your scan" : "Uploading your scan"} onBack={onBack} />
 
-      {!job && <Picker scanId={scanId} onJob={onJob} />}
+      {!job && files?.length > 0 && <Uploader files={files} scanId={scanId} onJob={onJob} onRescan={onRescan} />}
+      {!job && !files?.length && (
+        <>
+          <p className="lede upload-lede">Nothing to upload. Start a scan and take photos or record a video.</p>
+          <button type="button" className="btn btn-primary btn-block" onClick={onRescan}>
+            Start scanning
+          </button>
+        </>
+      )}
       {job && (job.status === 'queued' || job.status === 'running') && <Processing job={job} />}
       {job?.status === 'failed' && (
         <>
           <p className="error">{job.error || 'Processing failed.'}</p>
           <div className="cta-bar">
             <div className="cta-inner">
-              <button type="button" className="btn btn-primary btn-block" onClick={onReset}>
-                Try another upload
+              <button type="button" className="btn btn-primary btn-block" onClick={onRescan}>
+                Scan again
               </button>
             </div>
           </div>
         </>
       )}
-      {job?.status === 'done' && <Done job={job} itemCount={itemCount} onReview={onReview} onReset={onReset} />}
+      {job?.status === 'done' && <Done job={job} itemCount={itemCount} onReview={onReview} onRescan={onRescan} />}
 
       {isMock && <p className="note upload-demo">Demo mode: the upload and the results are simulated.</p>}
     </section>

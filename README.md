@@ -12,7 +12,7 @@ npm run dev
 ```
 
 With no backend configured (`VITE_API_URL` empty) or with `VITE_USE_MOCK=true`, the app runs in **demo mode**:
-the camera is real, detections are simulated, and saved scans stay in the browser. Copy `.env.example` to
+the camera is real, processing is simulated, and saved scans stay in the browser. Copy `.env.example` to
 `.env.local` to use your backend.
 
 Browsers only allow camera access on HTTPS (or `localhost`). To test on a phone while developing, run
@@ -30,13 +30,13 @@ Run it, then either:
 
 ## The flow
 
-`Home → Camera or Upload → Detected items → Reuse Report → Marketplace` (and a Map of material sources)
+`Home → Camera → Processing → Detected items → Reuse Report → Marketplace` (and a Map of material sources)
 
 | Screen | Route | What it does |
 | --- | --- | --- |
 | Home | `#/` | Start scanning. Tabs: Home, Scans, Reports, Profile |
-| Camera | `#/scan` | **Photo**: the shutter analyses one picture. **Video**: the shutter starts and stops live scanning. The gallery button analyses a picture from the device, the flip button switches cameras. **Finish** (top right, with the running count) works at any time, even with zero detections. |
-| Upload | `#/upload` | **Upload video or photos** on Home. Four ways in: **Record video** and **Take photos** with the app's own camera, or **Upload videos** and **Upload photos** from the device (they can be mixed); the server builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
+| Camera | `#/scan` | **Start scanning** on Home. **Photo**: the shutter takes a photo. **Video**: the shutter starts and stops a recording. The gallery button adds photos or videos from the device, the flip button switches cameras. All of them can be mixed. **Finish** (top right, with the number of captures) uploads them. |
+| Processing | `#/upload` | Uploads the captures with a progress bar, then follows the server: it builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
 | Detected items | `#/items` | One row per label with its count. Tap a row to correct quantity, material, condition (doors: width and height) or remove an item. **Generate Reuse Report** saves the scan and continues. With nothing detected, sample items are shown, marked as sample data. |
 | Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. The share icon exports the report as a PDF (phone share sheet where supported, otherwise a download). **Find buyers / next steps** opens the marketplace. |
 | Reuse Marketplace | `#/market` | Search, category chips, 2-column cards with a heart (kept in the browser). The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. Scanned materials come first. |
@@ -68,39 +68,16 @@ picked up automatically. Real scans always show the camera crop.
 Field names may also be camelCase; they are normalised in `src/lib/api.js`, the only file to change if your API
 differs.
 
-### `POST /detect`
+### Detected items
 
-Called about every 600 ms in Video mode, and once per picture in Photo mode or from the gallery. `multipart/form-data`
-with `frame` (JPEG, at most 640 px wide), `scan_id`, `frame_index`.
+Items come from the processing job's `objects` (below). Field rules:
 
-```json
-{
-  "objects": [
-    {
-      "id": "brick-2",
-      "label": "bricks",
-      "box": { "x": 0.31, "y": 0.12, "w": 0.34, "h": 0.5 },
-      "quantity": 40,
-      "unit": "pc",
-      "material": "clay",
-      "confidence": 0.88
-    }
-  ],
-  "doors": [
-    { "id": "door-3", "box": { "x": 0.1, "y": 0.1, "w": 0.3, "h": 0.7 },
-      "width_cm": 91.2, "height_cm": 203.8, "material": "wood", "confidence": 0.93 }
-  ]
-}
-```
-
-- Both lists are optional and are merged. Entries in `doors` need no `label` (they are labelled `doors`), so a
-  backend that only detects doors keeps working unchanged.
 - `label` is matched to `bricks`, `concrete_beams`, `wooden_beams`, `window_frames`, `doors`, `floor_tiles` or
-  `stone_slabs` (singular forms and spaces are accepted). Any other label is kept and shown as it is.
-- `id` must stay the same for the same physical item across frames, so tracking happens on the backend. The app keeps
-  one entry per `id` and the reading with the highest confidence, unless the person corrected it by hand.
+  `stone_slabs` (singular forms and spaces are accepted, and `glass door` counts as a door). Any other label is kept
+  and shown as it is.
 - `quantity` defaults to 1. `unit` is `pc` or `m2` (floor tiles and stone slabs are areas).
-- `box` is normalised to the frame (0 to 1), origin top left. `width_cm` / `height_cm` are only used for doors.
+
+The backend's live `POST /detect` endpoint is no longer used by the app.
 
 ### `POST /reconstructions` and `GET /reconstructions/{id}`
 
@@ -151,14 +128,13 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | Path | What it does |
 | --- | --- |
 | `src/App.jsx` | Session state, save, and the routes |
-| `src/components/Scanner.jsx` | Camera: Photo/Video, shutter, gallery, flip, Finish |
-| `src/components/Upload.jsx`, `CaptureCamera.jsx`, `src/hooks/useJobPoll.js` | Upload a walkthrough and follow its processing on the server |
+| `src/components/Scanner.jsx` | Camera: Photo/Video, shutter, recording, gallery, flip, Finish |
+| `src/components/Upload.jsx`, `src/hooks/useJobPoll.js` | Upload the captures and follow their processing on the server |
 | `src/components/DetectedItems.jsx`, `ItemSheet.jsx` | Label-and-count list and the editor for one label |
 | `src/components/Report.jsx` | Reuse Report and PDF export button |
 | `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |
 | `src/components/MapScreen.jsx` | Map of material sources |
 | `src/components/Scans.jsx` | Saved scans |
-| `src/hooks/useScanLoop.js` | Frame capture and detection requests |
 | `src/lib/materials.js` | Material catalog: names, units, prices and CO₂ factors (estimates) |
 | `src/lib/items.js` | Grouping items by label; report totals; sample report |
 | `src/lib/market.js`, `sites.js`, `swiss.js` | Sample listings and sources, cantons and cities, filters |

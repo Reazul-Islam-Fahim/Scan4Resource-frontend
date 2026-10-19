@@ -35,6 +35,8 @@ export default function App() {
   const navigate = useNavigate()
   const [session, setSession] = useState(() => loadSession() ?? newSession())
   const [save, setSave] = useState({ status: 'idle', error: '' })
+  // What the camera captured, on its way to the server. Files cannot go into sessionStorage, so a reload drops them.
+  const [pendingFiles, setPendingFiles] = useState([])
 
   // With nothing detected the pages show sample data instead (and it is never saved).
   const report = useMemo(() => buildReport(session.items), [session.items])
@@ -53,25 +55,18 @@ export default function App() {
       if (unsaved && !window.confirm('Start a new scan? The current scan has not been saved.')) return
       setSession(newSession())
       setSave({ status: 'idle', error: '' })
+      setPendingFiles([])
       navigate(path)
     },
     [session.items.length, session.savedAt, session.job, navigate],
   )
   const startScan = useCallback(() => startNew('/scan'), [startNew])
-  const startUpload = useCallback(() => startNew('/upload'), [startNew])
 
   const discard = () => {
     setSession(newSession())
     setSave({ status: 'idle', error: '' })
     navigate('/')
   }
-
-  const addItems = useCallback((incoming) => {
-    setSession((current) => {
-      const items = mergeDetections(current.items, incoming, current.ignored)
-      return items === current.items ? current : { ...current, items, savedAt: null }
-    })
-  }, [])
 
   // The server's answers about an uploaded walkthrough. Once it is done, its objects join the items.
   const onJob = useCallback((job) => {
@@ -87,7 +82,6 @@ export default function App() {
   }, [])
   useJobPoll(session.job, onJob)
 
-  const resetJob = () => setSession((current) => ({ ...current, job: null }))
 
   const updateItem = (id, patch) =>
     setSession((current) => ({
@@ -140,26 +134,26 @@ export default function App() {
         path="/scan"
         element={
           <Scanner
-            scanId={session.id}
-            items={session.items}
-            ignored={session.ignored}
-            onItems={addItems}
-            onFinish={() => navigate('/items')}
+            onFinish={(files) => {
+              setPendingFiles(files)
+              navigate('/upload')
+            }}
             onCancel={discard}
           />
         }
       />
       <Route element={<Shell onScan={startScan} />}>
-        <Route index element={<Home onStart={startScan} onUpload={startUpload} onSettings={() => navigate('/profile')} />} />
+        <Route index element={<Home onStart={startScan} onSettings={() => navigate('/profile')} />} />
         <Route
           path="upload"
           element={
             <Upload
               scanId={session.id}
+              files={pendingFiles}
               job={session.job}
               itemCount={session.items.length}
               onJob={onJob}
-              onReset={resetJob}
+              onRescan={startScan}
               onBack={() => navigate('/')}
               onReview={() => navigate('/items')}
             />

@@ -538,35 +538,6 @@ button:disabled {
   object-fit: cover;
 }
 
-.overlay {
-  position: absolute;
-  inset: 0;
-}
-
-.dim-box {
-  fill: rgba(30, 194, 138, 0.1);
-  stroke: #1ec28a;
-  stroke-width: 2.5;
-}
-
-.dim-lines line {
-  stroke: #1ec28a;
-  stroke-width: 1.5;
-}
-
-.chip text {
-  font: 600 13px var(--font);
-  fill: #fff;
-}
-
-.chip-ink rect {
-  fill: #0d2a23;
-}
-
-.chip-mark rect {
-  fill: var(--green);
-}
-
 .scanner-top {
   position: absolute;
   top: 0;
@@ -1884,75 +1855,6 @@ button:disabled {
   font-size: 15.5px;
 }
 
-.upload-pick {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.upload-tile {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 1px dashed var(--mint-line);
-  border-radius: 18px;
-  background: #fff;
-  text-align: center;
-  cursor: pointer;
-}
-
-.upload-tile svg {
-  width: 30px;
-  height: 30px;
-  margin-bottom: 4px;
-  color: var(--green);
-}
-
-.upload-tile span {
-  color: var(--muted);
-  font-size: 13.5px;
-}
-
-.upload-tile.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.upload-files {
-  display: grid;
-  gap: 6px;
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.upload-files li {
-  display: grid;
-  grid-template-columns: 1fr auto 36px;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 6px 6px 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
-}
-
-.upload-file-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.upload-tips {
-  margin: 16px 0;
-  padding-left: 18px;
-}
-
-.upload-demo {
-  margin-top: 16px;
-}
-
 .progress-track {
   height: 8px;
   overflow: hidden;
@@ -1965,15 +1867,6 @@ button:disabled {
   border-radius: inherit;
   background: var(--green);
   transition: width 0.2s ease;
-}
-
-.upload-progress-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  color: var(--graphite);
-  font-size: 14px;
 }
 
 .job-steps {
@@ -2086,41 +1979,15 @@ button:disabled {
   font-size: 13.5px;
 }
 
-.upload-group {
-  margin: 18px 0 10px;
-  color: var(--graphite);
-  font-size: 14px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-button.upload-tile {
-  align-content: start;
-  width: 100%;
-  color: inherit;
-  font: inherit;
-}
-
-.upload-tile strong {
-  font-size: 15.5px;
-}
-
-.capture {
-  z-index: 40;
-}
-
-.capture-last {
-  overflow: hidden;
-  padding: 0;
-}
-
-.capture-last img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .shutter-rec span {
   background: #e5484d;
+}
+
+.upload-demo {
+  margin-top: 16px;
+}
+
+.upload-actions {
+  display: grid;
+  gap: 10px;
 }
