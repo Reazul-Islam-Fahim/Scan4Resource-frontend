@@ -1991,3 +1991,8 @@ button:disabled {
   display: grid;
   gap: 10px;
 }
+
+.stats-note {
+  margin: -6px 0 18px;
+  font-size: 12.5px;
+}

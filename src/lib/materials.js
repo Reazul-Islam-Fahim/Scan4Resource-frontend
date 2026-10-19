@@ -1,40 +1,40 @@
-// The materials the app knows about. Prices, CO2 factors and default places are illustrative
-// estimates: they drive the report and the sample marketplace, not real valuations.
+// The materials the app knows about. Listing prices and places are illustrative: they drive the sample
+// marketplace. CO2 and resale values of scanned items are calculated in impact.js.
 
 export const CATALOG = {
   bricks: {
     name: 'Bricks', market: 'Reclaimed bricks', category: 'bricks', unit: 'pc', priceUnit: 'pc',
-    material: 'Clay', resaleUnit: 2, co2Unit: 0.25, listUnit: 0.5, city: 'Zürich',
+    material: 'Clay', listUnit: 0.5, city: 'Zürich',
     aliases: ['brick'],
   },
   concrete_beams: {
     name: 'Concrete beams', market: 'Concrete beams', category: 'concrete', unit: 'pc', priceUnit: 'piece',
-    material: 'Reinforced concrete', resaleUnit: 100, co2Unit: 60, listUnit: 80, city: 'Basel',
+    material: 'Reinforced concrete', listUnit: 80, city: 'Basel',
     aliases: ['concrete', 'concrete_beam'],
   },
   wooden_beams: {
     name: 'Wooden beams', market: 'Wooden beams', category: 'wood', unit: 'pc', priceUnit: 'piece',
-    material: 'Solid wood', resaleUnit: 30, co2Unit: 12, listUnit: 40, city: 'Bern',
+    material: 'Solid wood', listUnit: 40, city: 'Bern',
     aliases: ['wooden_beam', 'wood_beam', 'timber', 'beam', 'beams'],
   },
   window_frames: {
     name: 'Window frames', market: 'Window frames', category: 'windows', unit: 'pc', priceUnit: 'piece',
-    material: 'Wood', marketSub: 'Wood, double glazing', resaleUnit: 100, co2Unit: 25, listUnit: 120, city: 'Lucerne',
+    material: 'Wood', marketSub: 'Wood, double glazing', listUnit: 120, city: 'Lucerne',
     aliases: ['window', 'windows', 'window_frame'],
   },
   doors: {
     name: 'Doors', market: 'Doors', category: 'doors', unit: 'pc', priceUnit: 'piece',
-    material: 'Wood', resaleUnit: 100, co2Unit: 20, listUnit: 90, city: 'Winterthur',
+    material: 'Wood', listUnit: 90, city: 'Winterthur',
     aliases: ['door', 'glass_door', 'glass_doors'],
   },
   floor_tiles: {
     name: 'Floor tiles', market: 'Floor tiles', category: 'tiles', unit: 'm2', priceUnit: 'm²',
-    material: 'Ceramic', resaleUnit: 15.5, co2Unit: 14, listUnit: 22, city: 'Lugano',
+    material: 'Ceramic', listUnit: 22, city: 'Lugano',
     aliases: ['tile', 'tiles', 'floor_tile', 'ceramic_tile'],
   },
   stone_slabs: {
     name: 'Stone slabs', market: 'Stone slabs', category: 'stone', unit: 'm2', priceUnit: 'm²',
-    material: 'Natural stone', resaleUnit: 20, co2Unit: 16, listUnit: 25, city: 'St. Gallen',
+    material: 'Natural stone', listUnit: 25, city: 'St. Gallen',
     aliases: ['stone', 'stone_slab'],
   },
 }
@@ -70,7 +70,7 @@ export function catalogFor(label) {
   const name = titleCase(String(label || 'unknown').replace(/_/g, ' '))
   return {
     name, market: name, category: 'other', unit: 'pc', priceUnit: 'piece',
-    material: '', resaleUnit: 10, co2Unit: 5, listUnit: 20, city: 'Zürich', aliases: [],
+    material: '', listUnit: 20, city: 'Zürich', aliases: [],
   }
 }
 

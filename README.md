@@ -53,8 +53,15 @@ saved.
 
 ### Estimates
 
-Resale values, CO₂ savings and marketplace prices come from illustrative per-material factors in
-`src/lib/materials.js`. They are placeholders, not valuations. Marketplace distances are measured from Zürich.
+**CO₂ savings** are the emissions of making new replacements, which reuse avoids, calculated per item from its
+kind, measured size and material with the production factors of the Swiss KBOB list (Ökobilanzdaten im Baubereich
+2009/1:2014). Doors and windows use KBOB's per-m² elements (a window frame is taken as 30% of the window); other
+objects use a typical weight, scaled by the scanned size, times the KBOB factor of their material.
+
+**Resale value** is a typical new price times the share a reused item fetches in its condition (good 40%, fair 25%,
+poor 10%, not set 30%). The new prices are rough averages, not market data. All factors are in
+`src/lib/impact.js`. Marketplace listing prices come from `src/lib/materials.js` and are samples. Marketplace
+distances are measured from Zürich.
 
 ## Photos
 
@@ -135,7 +142,8 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |
 | `src/components/MapScreen.jsx` | Map of material sources |
 | `src/components/Scans.jsx` | Saved scans |
-| `src/lib/materials.js` | Material catalog: names, units, prices and CO₂ factors (estimates) |
+| `src/lib/materials.js` | Material catalog: names, units, sample listing prices |
+| `src/lib/impact.js` | CO₂ savings and resale value per item (KBOB factors, condition) |
 | `src/lib/items.js` | Grouping items by label; report totals; sample report |
 | `src/lib/market.js`, `sites.js`, `swiss.js` | Sample listings and sources, cantons and cities, filters |
 | `src/lib/pdf.js` | The PDF (`jspdf`, loaded only on export) |

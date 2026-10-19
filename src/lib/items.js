@@ -1,5 +1,6 @@
 import { CATALOG, catalogFor, catalogOrder } from './materials'
 import { materialLabel, round1 } from './format'
+import { itemImpact } from './impact'
 
 /** The material line shown under a label: what the person or backend said, else the catalog default. */
 export function materialText(item) {
@@ -15,6 +16,7 @@ function makeRow(label, list) {
   const quantity = round1(list.reduce((sum, item) => sum + (Number.isFinite(item.quantity) ? item.quantity : 1), 0))
   const materials = unique(list.map(materialText))
   const conditions = unique(list.map((item) => item.condition))
+  const impacts = list.map(itemImpact)
   return {
     key: label,
     label,
@@ -26,8 +28,8 @@ function makeRow(label, list) {
     material: materials.length <= 1 ? (materials[0] ?? '') : 'Mixed materials',
     condition: conditions.length === 1 && list.every((item) => item.condition) ? conditions[0] : null,
     image: list.find((item) => item.image)?.image ?? null,
-    value: quantity * entry.resaleUnit,
-    co2: quantity * entry.co2Unit,
+    value: impacts.reduce((sum, impact) => sum + impact.resale, 0),
+    co2: impacts.reduce((sum, impact) => sum + impact.co2Kg, 0),
   }
 }
 
@@ -55,6 +57,7 @@ const SAMPLE_QUANTITIES = {
 
 function sampleRow(label, quantity) {
   const entry = CATALOG[label]
+  const impact = itemImpact({ label, quantity, condition: 'good' })
   return {
     key: label,
     label,
@@ -65,8 +68,8 @@ function sampleRow(label, quantity) {
     material: entry.material,
     condition: 'good',
     image: null,
-    value: quantity * entry.resaleUnit,
-    co2: quantity * entry.co2Unit,
+    value: impact.resale,
+    co2: impact.co2Kg,
   }
 }
 

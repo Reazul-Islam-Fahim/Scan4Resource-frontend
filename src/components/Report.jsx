@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatChf, formatQty, formatTonnes } from '../lib/format'
+import { METHOD_NOTE } from '../lib/impact'
 import { exportReportPdf } from '../lib/pdf'
 import { ChevronRight, InfoIcon, LeafIcon, ShareIcon, ShopIcon } from './Icons'
 import MaterialImage from './MaterialImage'
@@ -79,6 +80,7 @@ export default function Report({ report, items, title, startedAt, save, onRetryS
           <dd>~ {formatChf(report.resale)}</dd>
         </div>
       </dl>
+      <p className="note stats-note">{METHOD_NOTE}</p>
 
       <h2 className="section-title">Identified materials</h2>
       <ul className="material-list">
