@@ -114,6 +114,18 @@ export const VideoIcon = make(
     <path d="M16 10.5l5-3v9l-5-3" />
   </>,
 )
+export const CameraIcon = make(
+  <>
+    <path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+    <circle cx="12" cy="13.5" r="3.5" />
+  </>,
+)
+export const FilmIcon = make(
+  <>
+    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+    <path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4" />
+  </>,
+)
 export const RefreshIcon = make(<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" />)
 export const GearIcon = make(
   <>

@@ -36,7 +36,7 @@ Run it, then either:
 | --- | --- | --- |
 | Home | `#/` | Start scanning. Tabs: Home, Scans, Reports, Profile |
 | Camera | `#/scan` | **Photo**: the shutter analyses one picture. **Video**: the shutter starts and stops live scanning. The gallery button analyses a picture from the device, the flip button switches cameras. **Finish** (top right, with the running count) works at any time, even with zero detections. |
-| Upload | `#/upload` | **Upload video or photos** on Home. Record a walkthrough or pick a video and/or photos; the server builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
+| Upload | `#/upload` | **Upload video or photos** on Home. Four ways in: **Record video** and **Take photos** with the app's own camera, or **Upload videos** and **Upload photos** from the device (they can be mixed); the server builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
 | Detected items | `#/items` | One row per label with its count. Tap a row to correct quantity, material, condition (doors: width and height) or remove an item. **Generate Reuse Report** saves the scan and continues. With nothing detected, sample items are shown, marked as sample data. |
 | Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. The share icon exports the report as a PDF (phone share sheet where supported, otherwise a download). **Find buyers / next steps** opens the marketplace. |
 | Reuse Marketplace | `#/market` | Search, category chips, 2-column cards with a heart (kept in the browser). The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. Scanned materials come first. |
@@ -152,7 +152,7 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | --- | --- |
 | `src/App.jsx` | Session state, save, and the routes |
 | `src/components/Scanner.jsx` | Camera: Photo/Video, shutter, gallery, flip, Finish |
-| `src/components/Upload.jsx`, `src/hooks/useJobPoll.js` | Upload a walkthrough and follow its processing on the server |
+| `src/components/Upload.jsx`, `CaptureCamera.jsx`, `src/hooks/useJobPoll.js` | Upload a walkthrough and follow its processing on the server |
 | `src/components/DetectedItems.jsx`, `ItemSheet.jsx` | Label-and-count list and the editor for one label |
 | `src/components/Report.jsx` | Reuse Report and PDF export button |
 | `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |

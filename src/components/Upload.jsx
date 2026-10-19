@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { describeError, isMock, uploadWalkthrough } from '../lib/api'
 import { plural } from '../lib/format'
-import { CheckIcon, ChevronRight, CloseIcon, ImagesIcon, InfoIcon, UploadIcon, VideoIcon } from './Icons'
+import CaptureCamera from './CaptureCamera'
+import { CameraIcon, CheckIcon, ChevronRight, CloseIcon, FilmIcon, ImagesIcon, InfoIcon, UploadIcon, VideoIcon } from './Icons'
 import PageHeader from './PageHeader'
 
 // What the server does after the upload, in order. `stage` from the server names the step it is on.
@@ -29,15 +30,20 @@ function Picker({ scanId, onJob }) {
   const [files, setFiles] = useState([])
   const [progress, setProgress] = useState(null) // null, or 0..1 while uploading
   const [error, setError] = useState('')
+  const [camera, setCamera] = useState(null) // null, or 'video' / 'photo' while the app's camera is open
   const abort = useRef(null)
 
   useEffect(() => () => abort.current?.abort(), [])
 
+  const addFiles = (picked) => {
+    setFiles((current) => [...current, ...picked.filter((f) => !current.some((c) => c.name === f.name && c.size === f.size))])
+    setError('')
+  }
+
   const add = (event) => {
     const picked = [...(event.target.files ?? [])]
     event.target.value = '' // picking the same file again still fires
-    setFiles((current) => [...current, ...picked.filter((f) => !current.some((c) => c.name === f.name && c.size === f.size))])
-    setError('')
+    addFiles(picked)
   }
 
   const upload = async () => {
@@ -56,25 +62,55 @@ function Picker({ scanId, onJob }) {
   const total = files.reduce((sum, file) => sum + file.size, 0)
   const uploading = progress !== null
 
+  if (camera) {
+    return (
+      <CaptureCamera
+        initialMode={camera}
+        onCancel={() => setCamera(null)}
+        onDone={(captured) => {
+          addFiles(captured)
+          setCamera(null)
+        }}
+      />
+    )
+  }
+
+  const tile = `upload-tile${uploading ? ' disabled' : ''}`
+
   return (
     <>
       <p className="lede upload-lede">
-        Film a slow walk through the space, or pick photos. The server builds a 3D model, then counts and measures what
-        it finds.
+        Film a slow walk through the space, or take photos. The server builds a 3D model, then counts and measures what
+        it finds. Videos and photos can be mixed.
       </p>
 
+      <h2 className="upload-group">With the app's camera</h2>
       <div className="upload-pick">
-        <label className={`upload-tile${uploading ? ' disabled' : ''}`}>
+        <button type="button" className={tile} onClick={() => setCamera('video')} disabled={uploading}>
           <VideoIcon />
-          <strong>Record a video</strong>
-          <span>Opens the camera</span>
-          <input type="file" accept="video/*" capture="environment" onChange={add} disabled={uploading} hidden />
+          <strong>Record video</strong>
+          <span>Walk through the room</span>
+        </button>
+        <button type="button" className={tile} onClick={() => setCamera('photo')} disabled={uploading}>
+          <CameraIcon />
+          <strong>Take photos</strong>
+          <span>As many as you like</span>
+        </button>
+      </div>
+
+      <h2 className="upload-group">From this device</h2>
+      <div className="upload-pick">
+        <label className={tile}>
+          <FilmIcon />
+          <strong>Upload videos</strong>
+          <span>From your gallery or files</span>
+          <input type="file" accept="video/*" multiple onChange={add} disabled={uploading} hidden />
         </label>
-        <label className={`upload-tile${uploading ? ' disabled' : ''}`}>
+        <label className={tile}>
           <ImagesIcon />
-          <strong>Choose files</strong>
-          <span>Video or photos</span>
-          <input type="file" accept="video/*,image/*" multiple onChange={add} disabled={uploading} hidden />
+          <strong>Upload photos</strong>
+          <span>From your gallery or files</span>
+          <input type="file" accept="image/*" multiple onChange={add} disabled={uploading} hidden />
         </label>
       </div>
 
