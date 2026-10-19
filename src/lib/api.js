@@ -182,6 +182,7 @@ function normalizeJob(raw) {
     items: (raw.objects ?? []).map((item) => normalizeDetection(item)).filter(Boolean),
     maskFrames: (files.mask_frames ?? []).map(fileUrl),
     model: fileUrl(files.model ?? null),
+    masks: fileUrl(files.masks ?? null),
   }
 }
 
