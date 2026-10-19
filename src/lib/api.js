@@ -1,4 +1,4 @@
-import { mockDelete, mockDetect, mockGetJob, mockList, mockSave, mockUpload } from './mock'
+import { mockDelete, mockGetJob, mockList, mockSave, mockUpload } from './mock'
 import { catalogFor, resolveLabel } from './materials'
 
 const BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
@@ -100,19 +100,6 @@ function readDetections(data) {
     if (item && !byId.has(item.id)) byId.set(item.id, item)
   }
   return [...byId.values()]
-}
-
-/** Send one camera frame; get back the items visible in it. */
-export async function detectItems(blob, { scanId, frameIndex, mode = 'video' }) {
-  if (isMock) return mockDetect(frameIndex, mode)
-
-  const body = new FormData()
-  body.append('frame', blob, 'frame.jpg')
-  body.append('scan_id', scanId)
-  body.append('frame_index', String(frameIndex))
-
-  const data = await request('/detect', { method: 'POST', body }, 8000)
-  return readDetections(data).filter((item) => item.box)
 }
 
 /**

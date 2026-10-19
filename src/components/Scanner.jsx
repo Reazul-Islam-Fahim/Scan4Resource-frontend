@@ -1,142 +1,138 @@
 import { useEffect, useRef, useState } from 'react'
 import useCamera from '../hooks/useCamera'
-import useScanLoop from '../hooks/useScanLoop'
-import useSize from '../hooks/useSize'
-import { markOf, plural } from '../lib/format'
-import { catalogFor } from '../lib/materials'
-import DimensionBox, { LabelBox } from './DimensionBox'
+import { plural } from '../lib/format'
 import { CloseIcon, FlipIcon, ImagesIcon } from './Icons'
 
-// Map a box in video coordinates (0 to 1) onto the element, which crops the video with object-fit: cover.
-function toScreen(box, videoW, videoH, boxW, boxH) {
-  const scale = Math.max(boxW / videoW, boxH / videoH)
-  const shownW = videoW * scale
-  const shownH = videoH * scale
-  const offsetX = (boxW - shownW) / 2
-  const offsetY = (boxH - shownH) / 2
-  return {
-    x: offsetX + box.x * shownW,
-    y: offsetY + box.y * shownH,
-    w: box.w * shownW,
-    h: box.h * shownH,
-  }
-}
-
 const HINTS = {
-  photo: ['Take a photo of building elements', 'Include floors, walls, doors, windows, beams, bricks, etc.'],
-  video: ['Move slowly along the site', 'Tap the button to start. Keep floors, walls, doors, windows and beams in view.'],
+  photo: ['Take photos all around the room', 'Overlap each photo with the last one. Keep doors, windows and beams fully in view.'],
+  video: ['Move slowly along the site', 'Tap the button to start. Film every wall once, keeping doors and windows fully in view.'],
 }
 
-export default function Scanner({ scanId, items, ignored, onItems, onFinish, onCancel }) {
-  const stageRef = useRef(null)
+// The first format this browser can record: mp4 on Safari (and recent Chrome), webm elsewhere. Both upload as they are.
+function recordingFormat() {
+  if (typeof MediaRecorder === 'undefined') return null
+  const types = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+  return types.find((type) => MediaRecorder.isTypeSupported?.(type)) ?? ''
+}
+
+const stamp = () => new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+const sameFile = (a, b) => a.name === b.name && a.size === b.size
+
+/**
+ * The camera. Photo mode takes pictures, Video mode records a walkthrough, and the gallery button adds photos or
+ * videos from the device. Finish hands everything over for processing on the server.
+ */
+export default function Scanner({ onFinish, onCancel }) {
   const fileRef = useRef(null)
+  const recorderRef = useRef(null)
+  const shotsRef = useRef(0) // numbers the photos, so two taken in the same second keep different names
   const [mode, setMode] = useState('photo')
   const [facing, setFacing] = useState('environment')
-  const [running, setRunning] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [files, setFiles] = useState([])
+  const [recording, setRecording] = useState(false)
+  const [seconds, setSeconds] = useState(0)
   const [notice, setNotice] = useState('')
 
   const { videoRef, status, error, retry } = useCamera(facing)
-  const { live, failures, capture, analyseFile } = useScanLoop({
-    videoRef,
-    enabled: status === 'ready' && mode === 'video' && running,
-    scanId,
-    onItems,
-  })
-  const size = useSize(stageRef)
-  const shown = live.filter((item) => !ignored.includes(item.id))
-
-  const video = videoRef.current
-  const videoW = video?.videoWidth || 0
-  const videoH = video?.videoHeight || 0
-  const canDraw = size.width > 0 && videoW > 0 && videoH > 0
 
   useEffect(() => {
     if (!notice) return undefined
-    const timer = setTimeout(() => setNotice(''), 3200)
+    const timer = setTimeout(() => setNotice(''), 2600)
     return () => clearTimeout(timer)
   }, [notice])
 
-  const report = (found) => {
-    if (found === null) setNotice('Still analysing the last picture. Try again in a moment.')
-    else if (found.length === 0) setNotice('Nothing recognised. Move closer and try again.')
-    else setNotice(`Found ${plural(found.length, 'item')}`)
-  }
-  const fail = () => setNotice('The detection service could not be reached. Check the connection and try again.')
+  useEffect(() => {
+    if (!recording) return undefined
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000)
+    return () => clearInterval(timer)
+  }, [recording])
 
-  const shutter = async () => {
-    if (status !== 'ready') return
-    if (mode === 'video') {
-      setRunning((value) => !value)
+  // A recording still running when the camera closes is stopped (and dropped).
+  useEffect(() => () => recorderRef.current?.state === 'recording' && recorderRef.current.stop(), [])
+
+  const add = (list, message) => {
+    setFiles((current) => [...current, ...list.filter((f) => !current.some((c) => sameFile(c, f)))])
+    setNotice(message)
+  }
+
+  const takePhoto = () => {
+    const video = videoRef.current
+    if (!video?.videoWidth) return
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    canvas.getContext('2d').drawImage(video, 0, 0)
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return
+        shotsRef.current += 1
+        add([new File([blob], `photo-${stamp()}-${shotsRef.current}.jpg`, { type: 'image/jpeg' })], 'Photo taken')
+      },
+      'image/jpeg',
+      0.92,
+    )
+  }
+
+  const startRecording = () => {
+    const stream = videoRef.current?.srcObject
+    const type = recordingFormat()
+    if (!stream || type === null) {
+      setNotice('This browser cannot record video here. Record with your camera app, then add it with the gallery button.')
       return
     }
-    setBusy(true)
-    try {
-      report(await capture())
-    } catch {
-      fail()
-    } finally {
-      setBusy(false)
+    const chunks = []
+    const recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined)
+    recorder.ondataavailable = (event) => event.data.size > 0 && chunks.push(event.data)
+    recorder.onstop = () => {
+      const mime = recorder.mimeType || type || 'video/webm'
+      const blob = new Blob(chunks, { type: mime })
+      if (blob.size === 0) return
+      add([new File([blob], `video-${stamp()}.${mime.includes('mp4') ? 'mp4' : 'webm'}`, { type: mime })], 'Video saved')
     }
+    recorder.start(1000)
+    recorderRef.current = recorder
+    setSeconds(0)
+    setRecording(true)
   }
 
-  const pickFile = async (event) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    setBusy(true)
-    try {
-      report(await analyseFile(file))
-    } catch {
-      fail()
-    } finally {
-      setBusy(false)
-    }
+  const stopRecording = () => {
+    recorderRef.current?.stop()
+    recorderRef.current = null
+    setRecording(false)
   }
 
-  const switchMode = (next) => {
-    setMode(next)
-    if (next !== 'video') setRunning(false)
+  const shutter = () => {
+    if (status !== 'ready') return
+    if (mode === 'photo') takePhoto()
+    else if (recording) stopRecording()
+    else startRecording()
+  }
+
+  const pickFiles = (event) => {
+    const picked = [...(event.target.files ?? [])]
+    event.target.value = '' // picking the same file again still fires
+    if (picked.length) add(picked, `Added ${plural(picked.length, 'file')}`)
+  }
+
+  const finish = () => {
+    if (files.length === 0) {
+      setNotice(mode === 'photo' ? 'Take a photo first, or add one with the gallery button.' : 'Record a video first, or add one with the gallery button.')
+      return
+    }
+    onFinish(files)
   }
 
   const cancel = () => {
-    if (items.length === 0 || window.confirm('Discard the items found so far?')) onCancel()
+    if (files.length === 0 || window.confirm(`Discard ${plural(files.length, 'capture')}?`)) onCancel()
   }
 
-  const doors = items.filter((item) => item.label === 'doors')
   const [hintTitle, hintText] = HINTS[mode]
 
   return (
     <div className="scanner">
-      <div className="stage" ref={stageRef}>
+      <div className="stage">
         <video ref={videoRef} playsInline muted autoPlay />
-
-        {canDraw && (
-          <svg
-            className="overlay"
-            width={size.width}
-            height={size.height}
-            viewBox={`0 0 ${size.width} ${size.height}`}
-            aria-hidden="true"
-          >
-            {shown.map((item) => {
-              const rect = toScreen(item.box, videoW, videoH, size.width, size.height)
-              if (item.label === 'doors') {
-                const index = doors.findIndex((door) => door.id === item.id)
-                return (
-                  <DimensionBox
-                    key={item.id}
-                    door={item}
-                    mark={index === -1 ? 'New' : markOf(index)}
-                    bounds={size}
-                    rect={rect}
-                  />
-                )
-              }
-              return <LabelBox key={item.id} item={item} name={catalogFor(item.label).name} rect={rect} />
-            })}
-          </svg>
-        )}
       </div>
 
       <div className="scanner-top">
@@ -155,36 +151,34 @@ export default function Scanner({ scanId, items, ignored, onItems, onFinish, onC
               role="tab"
               aria-selected={mode === key}
               className="segment"
-              onClick={() => switchMode(key)}
+              onClick={() => setMode(key)}
+              disabled={recording}
             >
               {label}
             </button>
           ))}
         </div>
 
-        <button type="button" className="finish-pill" onClick={onFinish}>
+        <button type="button" className="finish-pill" onClick={finish} disabled={recording}>
           Finish
-          <span className="finish-count bump" key={items.length}>
-            {items.length}
+          <span className="finish-count bump" key={files.length}>
+            {files.length}
           </span>
         </button>
       </div>
 
-      <div className="hint-card">
-        <strong>{hintTitle}</strong>
-        <span>{hintText}</span>
-      </div>
+      {!recording && (
+        <div className="hint-card">
+          <strong>{hintTitle}</strong>
+          <span>{hintText}</span>
+        </div>
+      )}
 
       <div className="viewfinder" aria-hidden="true">
         <i /> <i /> <i /> <i />
       </div>
 
       {status === 'starting' && <p className="banner">Starting the camera…</p>}
-      {status === 'ready' && failures >= 3 && mode === 'video' && running && (
-        <p className="banner" role="status">
-          Can’t reach the detection service. Scanning continues when the connection is back.
-        </p>
-      )}
 
       {status === 'error' && (
         <div className="stage-msg" role="alert">
@@ -206,32 +200,44 @@ export default function Scanner({ scanId, items, ignored, onItems, onFinish, onC
             {notice}
           </p>
         )}
-        {mode === 'video' && running && !notice && <p className="snap-toast snap-live">Scanning</p>}
+        {recording && !notice && <p className="snap-toast snap-live">Recording {clock(seconds)}</p>}
 
         <div className="controls">
-          <button type="button" className="cam-btn cam-btn-square" onClick={() => fileRef.current?.click()} disabled={busy} aria-label="Pick a photo from the gallery">
+          <button
+            type="button"
+            className="cam-btn cam-btn-square"
+            onClick={() => fileRef.current?.click()}
+            disabled={recording}
+            aria-label="Add photos or videos from the device"
+          >
             <ImagesIcon />
           </button>
 
           <button
             type="button"
-            className={`shutter${mode === 'video' && running ? ' shutter-on' : ''}${busy ? ' shutter-busy' : ''}`}
+            className={`shutter${mode === 'video' ? ' shutter-rec' : ''}${recording ? ' shutter-on' : ''}`}
             onClick={shutter}
-            disabled={busy || status !== 'ready'}
-            aria-label={mode === 'photo' ? 'Take photo' : running ? 'Stop scanning' : 'Start scanning'}
+            disabled={status !== 'ready'}
+            aria-label={mode === 'photo' ? 'Take photo' : recording ? 'Stop recording' : 'Start recording'}
           >
             <span />
           </button>
 
-          <button type="button" className="cam-btn cam-btn-round" onClick={() => setFacing((f) => (f === 'environment' ? 'user' : 'environment'))} aria-label="Switch camera">
+          <button
+            type="button"
+            className="cam-btn cam-btn-round"
+            onClick={() => setFacing((f) => (f === 'environment' ? 'user' : 'environment'))}
+            disabled={recording}
+            aria-label="Switch camera"
+          >
             <FlipIcon />
           </button>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickFile} />
+        <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={pickFiles} />
       </div>
 
       <p className="sr-only" aria-live="polite">
-        {plural(items.length, 'item')} found
+        {plural(files.length, 'capture')}
       </p>
     </div>
   )
