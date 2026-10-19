@@ -1,3 +1,4 @@
+import { METHOD_NOTE } from './impact'
 import { conditionLabel, formatChf, formatDate, formatQty, formatSize, formatTonnes, markOf } from './format'
 
 const GREEN = [1, 128, 88]
@@ -150,7 +151,7 @@ export async function exportReportPdf(report, { title, startedAt, items = [] }) 
     doc.setTextColor(...GREY)
     if (p === pages) {
       doc.text(
-        'CO2 savings and resale values are estimates based on average factors per material. Actual values depend on condition and the market.',
+        METHOD_NOTE,
         page.m,
         page.h - 18,
         { maxWidth: inner },
