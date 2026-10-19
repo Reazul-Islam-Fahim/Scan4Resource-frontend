@@ -8,6 +8,8 @@ export const MATERIALS = [
   ['concrete', 'Concrete'],
   ['ceramic', 'Ceramic'],
   ['stone', 'Stone'],
+  ['plastic', 'Plastic'],
+  ['fabric', 'Fabric'],
   ['unknown', 'Unknown'],
 ]
 
@@ -40,7 +42,8 @@ export const formatCm = (value) => (Number.isFinite(value) ? `${Math.round(value
 export const formatSize = (item) => {
   const w = Number.isFinite(item.widthCm) ? round1(item.widthCm) : '—'
   const h = Number.isFinite(item.heightCm) ? round1(item.heightCm) : '—'
-  return `${w} × ${h} cm`
+  // `partial`: the object was cut off or hidden in the scan, so its size is only a lower bound.
+  return `${item.partial ? '~ ' : ''}${w} × ${h} cm`
 }
 
 export function formatDate(iso) {

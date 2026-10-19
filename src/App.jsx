@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { describeError, saveScan } from './lib/api'
+import useJobPoll from './hooks/useJobPoll'
 import { defaultScanName } from './lib/format'
 import { buildReport } from './lib/items'
 import { clearSession, loadSession, mergeDetections, newSession, sessionFromScan, storeSession } from './lib/session'
@@ -13,8 +14,23 @@ import Report from './components/Report'
 import Scanner from './components/Scanner'
 import Scans from './components/Scans'
 import Shell from './components/Shell'
+import Upload from './components/Upload'
 
-// Home -> camera -> detected items -> reuse report -> marketplace (and the map).
+// Home -> camera (or upload) -> detected items -> reuse report -> marketplace (and the map).
+
+// What the session keeps of an upload job: its state and links, not the items (those are merged in).
+const jobSummary = (job, previous = {}) => ({
+  id: job.id,
+  status: job.status ?? previous.status,
+  stage: 'stage' in job ? job.stage : (previous.stage ?? null),
+  error: job.error ?? previous.error ?? '',
+  warning: job.warning ?? previous.warning ?? '',
+  maskFrames: job.maskFrames ?? previous.maskFrames ?? [],
+  model: job.model ?? previous.model ?? null,
+  count: job.items ? job.items.length : (previous.count ?? 0),
+  pollError: job.pollError ?? '',
+})
+
 export default function App() {
   const navigate = useNavigate()
   const [session, setSession] = useState(() => loadSession() ?? newSession())
@@ -26,16 +42,23 @@ export default function App() {
 
   // Keep an in-progress scan across accidental reloads.
   useEffect(() => {
-    if (session.items.length > 0) storeSession(session)
+    if (session.items.length > 0 || session.job) storeSession(session)
     else clearSession()
   }, [session])
 
-  const startScan = useCallback(() => {
-    if (session.items.length > 0 && !session.savedAt && !window.confirm('Start a new scan? The current scan has not been saved.')) return
-    setSession(newSession())
-    setSave({ status: 'idle', error: '' })
-    navigate('/scan')
-  }, [session.items.length, session.savedAt, navigate])
+  const startNew = useCallback(
+    (path) => {
+      const busy = session.job && (session.job.status === 'queued' || session.job.status === 'running')
+      const unsaved = (session.items.length > 0 && !session.savedAt) || busy
+      if (unsaved && !window.confirm('Start a new scan? The current scan has not been saved.')) return
+      setSession(newSession())
+      setSave({ status: 'idle', error: '' })
+      navigate(path)
+    },
+    [session.items.length, session.savedAt, session.job, navigate],
+  )
+  const startScan = useCallback(() => startNew('/scan'), [startNew])
+  const startUpload = useCallback(() => startNew('/upload'), [startNew])
 
   const discard = () => {
     setSession(newSession())
@@ -49,6 +72,22 @@ export default function App() {
       return items === current.items ? current : { ...current, items, savedAt: null }
     })
   }, [])
+
+  // The server's answers about an uploaded walkthrough. Once it is done, its objects join the items.
+  const onJob = useCallback((job) => {
+    setSession((current) => {
+      if (!current.job ? job.status !== 'queued' && job.status !== 'running' : current.job.id !== job.id) return current
+      const next = jobSummary(job, current.job ?? {})
+      if (job.status === 'done' && current.job?.status !== 'done') {
+        const items = mergeDetections(current.items, job.items ?? [], current.ignored)
+        return { ...current, items, savedAt: null, job: next }
+      }
+      return { ...current, job: next }
+    })
+  }, [])
+  useJobPoll(session.job, onJob)
+
+  const resetJob = () => setSession((current) => ({ ...current, job: null }))
 
   const updateItem = (id, patch) =>
     setSession((current) => ({
@@ -111,14 +150,28 @@ export default function App() {
         }
       />
       <Route element={<Shell onScan={startScan} />}>
-        <Route index element={<Home onStart={startScan} onSettings={() => navigate('/profile')} />} />
+        <Route index element={<Home onStart={startScan} onUpload={startUpload} onSettings={() => navigate('/profile')} />} />
+        <Route
+          path="upload"
+          element={
+            <Upload
+              scanId={session.id}
+              job={session.job}
+              itemCount={session.items.length}
+              onJob={onJob}
+              onReset={resetJob}
+              onBack={() => navigate('/')}
+              onReview={() => navigate('/items')}
+            />
+          }
+        />
         <Route
           path="items"
           element={
             <DetectedItems
               report={report}
               items={session.items}
-              onBack={() => navigate('/scan')}
+              onBack={() => navigate(session.job ? '/upload' : '/scan')}
               onNext={generateReport}
               onUpdate={updateItem}
               onRemove={removeItem}

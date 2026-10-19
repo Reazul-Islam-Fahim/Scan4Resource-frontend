@@ -1,4 +1,4 @@
-import { mockDelete, mockDetect, mockList, mockSave } from './mock'
+import { mockDelete, mockDetect, mockGetJob, mockList, mockSave, mockUpload } from './mock'
 import { catalogFor, resolveLabel } from './materials'
 
 const BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
@@ -79,6 +79,8 @@ export function normalizeDetection(raw, fallbackLabel = 'unknown') {
     unit: raw.unit === 'm2' || raw.unit === 'm²' ? 'm2' : raw.unit || catalogFor(label).unit,
     widthCm: toNumber(raw.width_cm ?? raw.widthCm),
     heightCm: toNumber(raw.height_cm ?? raw.heightCm),
+    depthCm: toNumber(raw.depth_cm ?? raw.depthCm),
+    partial: !!raw.partial,
     material: raw.material ?? 'unknown',
     condition: raw.condition ?? null,
     confidence: toNumber(raw.confidence ?? raw.score),
@@ -126,6 +128,8 @@ export async function saveScan({ id, site, startedAt, finishedAt, items }) {
     unit: item.unit,
     width_cm: item.widthCm,
     height_cm: item.heightCm,
+    depth_cm: item.depthCm ?? null,
+    partial: !!item.partial,
     material: item.material,
     condition: item.condition,
     confidence: item.confidence,
@@ -173,4 +177,65 @@ export async function listScans() {
       items: readDetections({ objects: scan.objects ?? scan.items, doors: scan.doors }),
     }))
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+}
+
+// ---- Upload a walkthrough, processed on the server (3D model, objects, sizes) ----------------
+
+/** File links in a job are paths on the API ("/reconstructions/..."); make them loadable. */
+export const fileUrl = (path) => (!path || /^(https?:|data:|blob:)/.test(path) ? path : `${BASE}${path}`)
+
+function normalizeJob(raw) {
+  const files = raw.files ?? {}
+  return {
+    id: String(raw.id),
+    status: raw.status ?? 'queued', // queued, running, done, failed
+    stage: raw.stage ?? null,
+    error: raw.error ?? '',
+    warning: raw.warning ?? '',
+    items: (raw.objects ?? []).map((item) => normalizeDetection(item)).filter(Boolean),
+    maskFrames: (files.mask_frames ?? []).map(fileUrl),
+    model: fileUrl(files.model ?? null),
+  }
+}
+
+/**
+ * Upload a video and/or photos. Resolves with the job as soon as the upload is in; the processing
+ * runs on the server afterwards (poll `getJob`). XMLHttpRequest, not fetch, for upload progress.
+ */
+export function uploadWalkthrough(files, { scanId, onProgress, signal } = {}) {
+  if (isMock) return mockUpload(files, { onProgress, signal }).then(normalizeJob)
+
+  return new Promise((resolve, reject) => {
+    const body = new FormData()
+    for (const file of files) body.append('files', file, file.name)
+    if (scanId) body.append('scan_id', scanId)
+
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${BASE}/reconstructions`)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded / event.total)
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(normalizeJob(JSON.parse(xhr.responseText)))
+        } catch {
+          reject(new ApiError(xhr.status, 'The server sent an answer the app could not read.'))
+        }
+      } else {
+        const text = xhr.responseText || ''
+        reject(new ApiError(xhr.status, text.slice(0, 200), readDetail(text)))
+      }
+    }
+    xhr.onerror = () => reject(new TypeError('network'))
+    xhr.onabort = () => reject(new ApiError(0, 'The upload was cancelled.'))
+    signal?.addEventListener('abort', () => xhr.abort())
+    xhr.send(body)
+  })
+}
+
+/** The processing job: status, stage, and the counted objects once done. */
+export async function getJob(id) {
+  if (isMock) return normalizeJob(await mockGetJob(id))
+  return normalizeJob(await request(`/reconstructions/${encodeURIComponent(id)}`, {}, 15000))
 }

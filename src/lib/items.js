@@ -22,6 +22,7 @@ function makeRow(label, list) {
     unit,
     quantity,
     detections: list.length,
+    partial: list.filter((item) => item.partial).length,
     material: materials.length <= 1 ? (materials[0] ?? '') : 'Mixed materials',
     condition: conditions.length === 1 && list.every((item) => item.condition) ? conditions[0] : null,
     image: list.find((item) => item.image)?.image ?? null,

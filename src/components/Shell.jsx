@@ -2,11 +2,11 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { MarketTabs, ScanTabs } from './TabBars'
 
-/** Page frame: the right tab bar for where you are, and none on the two step-by-step pages. */
+/** Page frame: the right tab bar for where you are, and none on the step-by-step pages. */
 export default function Shell({ onScan }) {
   const { pathname } = useLocation()
   const market = pathname === '/market' || pathname === '/map'
-  const flow = pathname === '/items' || pathname === '/report'
+  const flow = pathname === '/items' || pathname === '/report' || pathname === '/upload'
 
   useEffect(() => {
     window.scrollTo(0, 0)

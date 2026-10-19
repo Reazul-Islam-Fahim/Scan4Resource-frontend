@@ -25,7 +25,7 @@ export const CATALOG = {
   doors: {
     name: 'Doors', market: 'Doors', category: 'doors', unit: 'pc', priceUnit: 'piece',
     material: 'Wood', resaleUnit: 100, co2Unit: 20, listUnit: 90, city: 'Winterthur',
-    aliases: ['door'],
+    aliases: ['door', 'glass_door', 'glass_doors'],
   },
   floor_tiles: {
     name: 'Floor tiles', market: 'Floor tiles', category: 'tiles', unit: 'm2', priceUnit: 'm²',
