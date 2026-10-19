@@ -12,6 +12,12 @@ function ItemEditor({ item, title, isDoor, unit, onUpdate, onRemove }) {
     const value = event.target.value
     onUpdate(item.id, { [key]: value === '' ? null : Number(value) })
   }
+  // A typed size is a measurement, no longer the scan's lower bound.
+  const setSize = (key) => (event) => {
+    const value = event.target.value
+    onUpdate(item.id, { [key]: value === '' ? null : Number(value), partial: false })
+  }
+  const sized = isDoor || item.widthCm != null || item.heightCm != null
 
   const percent = item.confidence == null ? null : Math.round(item.confidence * 100)
   const low = percent !== null && percent < 60
@@ -29,16 +35,20 @@ function ItemEditor({ item, title, isDoor, unit, onUpdate, onRemove }) {
         </button>
       </div>
 
+      {item.partial && (
+        <p className="editor-partial">Only partly seen in the scan, so the real size is at least this. Measure it and type it in.</p>
+      )}
+
       <div className="editor-grid">
-        {isDoor ? (
+        {sized ? (
           <>
             <label className="field">
               <span>Width (cm)</span>
-              <input className="input" type="number" inputMode="decimal" min="0" step="0.5" value={item.widthCm ?? ''} onChange={setNumber('widthCm')} />
+              <input className="input" type="number" inputMode="decimal" min="0" step="0.5" value={item.widthCm ?? ''} onChange={setSize('widthCm')} />
             </label>
             <label className="field">
               <span>Height (cm)</span>
-              <input className="input" type="number" inputMode="decimal" min="0" step="0.5" value={item.heightCm ?? ''} onChange={setNumber('heightCm')} />
+              <input className="input" type="number" inputMode="decimal" min="0" step="0.5" value={item.heightCm ?? ''} onChange={setSize('heightCm')} />
             </label>
           </>
         ) : (

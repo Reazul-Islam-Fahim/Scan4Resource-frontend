@@ -11,6 +11,7 @@ export function newSession() {
     items: [],
     ignored: [], // ids the person removed: they stay removed if the camera sees them again
     savedAt: null,
+    job: null, // an uploaded walkthrough being processed on the server: { id, status, stage, ... }
   }
 }
 
@@ -21,6 +22,8 @@ const toStored = (item) => ({
   unit: item.unit || catalogFor(item.label).unit,
   widthCm: round1(item.widthCm),
   heightCm: round1(item.heightCm),
+  depthCm: round1(item.depthCm),
+  partial: !!item.partial,
   material: item.material || 'unknown',
   condition: item.condition ?? null,
   confidence: item.confidence ?? null,
@@ -68,6 +71,7 @@ function migrate(session) {
     items: items.map((item) => ({ ...toStored({ ...item, label: resolveLabel(item.label) }), edited: !!item.edited })),
     ignored: Array.isArray(session.ignored) ? session.ignored : [],
     savedAt: session.savedAt ?? null,
+    job: session.job ?? null,
   }
 }
 
@@ -109,5 +113,6 @@ export function sessionFromScan(scan) {
     items: scan.items.map((item) => toStored(item)),
     ignored: [],
     savedAt: scan.createdAt ?? new Date().toISOString(),
+    job: null,
   }
 }

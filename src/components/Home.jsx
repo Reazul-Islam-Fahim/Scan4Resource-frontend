@@ -1,6 +1,6 @@
 import { isMock } from '../lib/api'
 import HeroArt from './HeroArt'
-import { ChevronRight, ClockIcon, CycleIcon, GearIcon, LeafIcon, ScanIcon } from './Icons'
+import { ChevronRight, ClockIcon, CycleIcon, GearIcon, LeafIcon, ScanIcon, UploadIcon } from './Icons'
 
 const FEATURES = [
   [LeafIcon, 'Detect', 'reusable materials'],
@@ -8,7 +8,7 @@ const FEATURES = [
   [CycleIcon, 'Support', 'a circular construction'],
 ]
 
-export default function Home({ onStart, onSettings }) {
+export default function Home({ onStart, onUpload, onSettings }) {
   return (
     <section className="home">
       <HeroArt className="home-hero" />
@@ -47,6 +47,11 @@ export default function Home({ onStart, onSettings }) {
         <button type="button" className="btn btn-primary btn-block btn-arrow" onClick={onStart}>
           <ScanIcon />
           <span>Start scanning</span>
+          <ChevronRight />
+        </button>
+        <button type="button" className="btn btn-secondary btn-block btn-arrow" onClick={onUpload}>
+          <UploadIcon />
+          <span>Upload video or photos</span>
           <ChevronRight />
         </button>
         {isMock && <p className="note">Demo mode: detections are simulated and scans stay in this browser.</p>}

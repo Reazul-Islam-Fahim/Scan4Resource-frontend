@@ -35,6 +35,7 @@ export default function DetectedItems({ report, items, onBack, onNext, onUpdate,
                 <strong>{r.name}</strong>
                 {r.material && <span>{r.material}</span>}
                 {r.condition && <span>{conditionLabel(r.condition)}</span>}
+                {r.partial > 0 && <span className="item-partial">{r.partial === r.detections && r.partial === 1 ? 'Size uncertain' : `${r.partial} of ${r.detections} sizes uncertain`}</span>}
               </span>
               <span className="item-qty">{formatQty(r.quantity, r.unit)}</span>
               <ChevronRight className="item-chev" />

@@ -107,6 +107,25 @@ export const MapIcon = make(<path d="M9 4L3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5zM9
 export const LayersIcon = make(<path d="M12 3l9 5-9 5-9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5" />)
 export const LocateIcon = make(<path d="M3 11l18-8-8 18-2-8z" />)
 export const FlipIcon = make(<path d="M20 8a8 8 0 0 0-14-2L4 8M4 4v4h4M4 16a8 8 0 0 0 14 2l2-2M20 20v-4h-4" />)
+export const UploadIcon = make(<path d="M12 16V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />)
+export const VideoIcon = make(
+  <>
+    <rect x="3" y="6" width="13" height="12" rx="2.5" />
+    <path d="M16 10.5l5-3v9l-5-3" />
+  </>,
+)
+export const CameraIcon = make(
+  <>
+    <path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+    <circle cx="12" cy="13.5" r="3.5" />
+  </>,
+)
+export const FilmIcon = make(
+  <>
+    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+    <path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4" />
+  </>,
+)
 export const RefreshIcon = make(<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" />)
 export const GearIcon = make(
   <>

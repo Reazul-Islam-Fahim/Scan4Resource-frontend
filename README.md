@@ -30,12 +30,13 @@ Run it, then either:
 
 ## The flow
 
-`Home → Camera → Detected items → Reuse Report → Marketplace` (and a Map of material sources)
+`Home → Camera or Upload → Detected items → Reuse Report → Marketplace` (and a Map of material sources)
 
 | Screen | Route | What it does |
 | --- | --- | --- |
 | Home | `#/` | Start scanning. Tabs: Home, Scans, Reports, Profile |
 | Camera | `#/scan` | **Photo**: the shutter analyses one picture. **Video**: the shutter starts and stops live scanning. The gallery button analyses a picture from the device, the flip button switches cameras. **Finish** (top right, with the running count) works at any time, even with zero detections. |
+| Upload | `#/upload` | **Upload video or photos** on Home. Four ways in: **Record video** and **Take photos** with the app's own camera, or **Upload videos** and **Upload photos** from the device (they can be mixed); the server builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
 | Detected items | `#/items` | One row per label with its count. Tap a row to correct quantity, material, condition (doors: width and height) or remove an item. **Generate Reuse Report** saves the scan and continues. With nothing detected, sample items are shown, marked as sample data. |
 | Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. The share icon exports the report as a PDF (phone share sheet where supported, otherwise a download). **Find buyers / next steps** opens the marketplace. |
 | Reuse Marketplace | `#/market` | Search, category chips, 2-column cards with a heart (kept in the browser). The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. Scanned materials come first. |
@@ -101,6 +102,15 @@ with `frame` (JPEG, at most 640 px wide), `scan_id`, `frame_index`.
 - `quantity` defaults to 1. `unit` is `pc` or `m2` (floor tiles and stone slabs are areas).
 - `box` is normalised to the frame (0 to 1), origin top left. `width_cm` / `height_cm` are only used for doors.
 
+### `POST /reconstructions` and `GET /reconstructions/{id}`
+
+Upload: `multipart/form-data` with every file as `files` and `scan_id`. The answer (202) is the job; the app then
+asks for `GET /reconstructions/{id}` every 3 seconds until `status` is `done` or `failed`, and shows `stage`
+(`picking frames`, `building 3D model`, `finding objects (frame 3 of 12)`) as progress. When it is done, `objects`
+are added to the scan like detections (each with `width_cm`, `height_cm`, `depth_cm`, `material`, `partial`), and
+`files.mask_frames` (paths on the API) are shown. `partial: true` means the object was only partly seen, so its
+size is a lower bound: the item is marked "size uncertain" until the person types a measurement.
+
 ### `POST /scans`
 
 Called when the report is generated. JSON body:
@@ -142,6 +152,7 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | --- | --- |
 | `src/App.jsx` | Session state, save, and the routes |
 | `src/components/Scanner.jsx` | Camera: Photo/Video, shutter, gallery, flip, Finish |
+| `src/components/Upload.jsx`, `CaptureCamera.jsx`, `src/hooks/useJobPoll.js` | Upload a walkthrough and follow its processing on the server |
 | `src/components/DetectedItems.jsx`, `ItemSheet.jsx` | Label-and-count list and the editor for one label |
 | `src/components/Report.jsx` | Reuse Report and PDF export button |
 | `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |
