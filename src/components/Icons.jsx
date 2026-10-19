@@ -53,6 +53,8 @@ export const CycleIcon = make(
   </>,
 )
 export const DocIcon = make(<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 13h6M9 17h6" />)
+export const DownloadIcon = make(<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" />)
+export const CubeIcon = make(<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" />)
 export const ShareIcon = make(
   <path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />,
 )

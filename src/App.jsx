@@ -27,6 +27,7 @@ const jobSummary = (job, previous = {}) => ({
   warning: job.warning ?? previous.warning ?? '',
   maskFrames: job.maskFrames ?? previous.maskFrames ?? [],
   model: job.model ?? previous.model ?? null,
+  masks: job.masks ?? previous.masks ?? null,
   count: job.items ? job.items.length : (previous.count ?? 0),
   pollError: job.pollError ?? '',
 })
@@ -178,6 +179,7 @@ export default function App() {
             <Report
               report={report}
               items={session.items}
+              job={session.job}
               title={title}
               startedAt={session.startedAt}
               save={save}

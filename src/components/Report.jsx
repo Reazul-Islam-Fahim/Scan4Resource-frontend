@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { formatChf, formatQty, formatTonnes } from '../lib/format'
 import { METHOD_NOTE } from '../lib/impact'
 import { exportReportPdf } from '../lib/pdf'
-import { ChevronRight, InfoIcon, LeafIcon, ShareIcon, ShopIcon } from './Icons'
+import { CubeIcon, DocIcon, DownloadIcon, ImagesIcon, InfoIcon, LeafIcon, ShareIcon, ShopIcon, ChevronRight } from './Icons'
 import MaterialImage from './MaterialImage'
 import PageHeader from './PageHeader'
 
-export default function Report({ report, items, title, startedAt, save, onRetrySave, onBack, onNext }) {
+export default function Report({ report, items, job, title, startedAt, save, onRetrySave, onBack, onNext }) {
   const [exporting, setExporting] = useState(false)
   const [notice, setNotice] = useState('')
   const [showSaved, setShowSaved] = useState(true)
@@ -97,6 +97,36 @@ export default function Report({ report, items, title, startedAt, save, onRetryS
         ))}
       </ul>
 
+      <h2 className="section-title section-gap">Downloads</h2>
+      <ul className="download-list">
+        <li>
+          <button type="button" className="download-row" onClick={share} disabled={exporting}>
+            <span className="download-icon">
+              <DocIcon />
+            </span>
+            <span className="download-text">
+              <strong>Report</strong>
+              <span>{exporting ? 'Creating the PDF…' : 'PDF with the items, CO₂ and resale value'}</span>
+            </span>
+            <DownloadIcon />
+          </button>
+        </li>
+        <FileDownload
+          href={job?.model}
+          icon={<CubeIcon />}
+          name="3D model"
+          detail="GLB file for any 3D viewer or Blender"
+          missing="Available after a scan is processed on the server"
+        />
+        <FileDownload
+          href={job?.masks}
+          icon={<ImagesIcon />}
+          name="Mask images"
+          detail={job?.maskFrames?.length ? `ZIP with ${job.maskFrames.length} frames, objects outlined` : 'ZIP of frames with the objects outlined'}
+          missing={job?.model ? 'No objects were outlined in this scan' : 'Available after a scan is processed on the server'}
+        />
+      </ul>
+
       <div className="cta-bar">
         <div className="cta-inner">
           {(notice || save.status === 'error' || (save.status === 'saved' && showSaved)) && (
@@ -122,5 +152,32 @@ export default function Report({ report, items, title, startedAt, save, onRetryS
         </div>
       </div>
     </section>
+  )
+}
+
+/** A file the server made for the scan. The server sends it as an attachment, so following the link downloads it. */
+function FileDownload({ href, icon, name, detail, missing }) {
+  const body = (
+    <>
+      <span className="download-icon">{icon}</span>
+      <span className="download-text">
+        <strong>{name}</strong>
+        <span>{href ? detail : missing}</span>
+      </span>
+      {href && <DownloadIcon />}
+    </>
+  )
+  return (
+    <li>
+      {href ? (
+        <a className="download-row" href={href} download>
+          {body}
+        </a>
+      ) : (
+        <div className="download-row" aria-disabled="true">
+          {body}
+        </div>
+      )}
+    </li>
   )
 }
