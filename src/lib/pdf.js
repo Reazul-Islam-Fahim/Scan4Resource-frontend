@@ -184,3 +184,22 @@ export function downloadBlob(blob, name) {
   link.remove()
   setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
+
+/**
+ * Hand the PDF to the phone's share sheet where that works, otherwise download it.
+ * Returns 'shared', 'downloaded' or 'cancelled'.
+ */
+export async function sharePdf({ blob, name }) {
+  const file = new File([blob], name, { type: 'application/pdf' })
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Reuse Report' })
+      return 'shared'
+    } catch (err) {
+      if (err?.name === 'AbortError') return 'cancelled'
+      // Sharing failed for another reason: fall through to a download.
+    }
+  }
+  downloadBlob(blob, name)
+  return 'downloaded'
+}

@@ -8,7 +8,7 @@ import PageHeader from './PageHeader'
 const STEPS = [
   ['upload', 'Uploaded'],
   ['picking', 'Picking the sharpest frames'],
-  ['building', 'Measuring the space'],
+  ['building', 'Building the 3D model'],
   ['finding', 'Finding and measuring objects'],
 ]
 
@@ -16,7 +16,7 @@ function stepOf(job) {
   if (job.status === 'queued') return 1
   const stage = job.stage ?? ''
   if (stage.startsWith('finding')) return 3
-  if (stage.startsWith('measuring') || stage.startsWith('building') || stage.startsWith('saving')) return 2
+  if (stage.startsWith('building') || stage.startsWith('saving')) return 2
   return 1
 }
 

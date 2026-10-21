@@ -66,7 +66,7 @@ export async function mockGetJob(id) {
   const job = { id, status: 'running', stage: null, error: null, warning: null, objects: [], files: {} }
   if (s < 2) return { ...job, status: 'queued' }
   if (s < 4) return { ...job, stage: 'picking frames' }
-  if (s < 8) return { ...job, stage: 'measuring' }
+  if (s < 8) return { ...job, stage: 'building 3D model' }
   if (s < 9) return { ...job, stage: 'saving files' }
   if (s < 9 + MOCK_FRAMES * 0.5) {
     return { ...job, stage: `finding objects (frame ${Math.floor((s - 9) / 0.5) + 1} of ${MOCK_FRAMES})` }

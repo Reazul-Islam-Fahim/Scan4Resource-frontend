@@ -26,6 +26,7 @@ const jobSummary = (job, previous = {}) => ({
   error: job.error ?? previous.error ?? '',
   warning: job.warning ?? previous.warning ?? '',
   maskFrames: job.maskFrames ?? previous.maskFrames ?? [],
+  model: job.model ?? previous.model ?? null,
   masks: job.masks ?? previous.masks ?? null,
   count: job.items ? job.items.length : (previous.count ?? 0),
   pollError: job.pollError ?? '',

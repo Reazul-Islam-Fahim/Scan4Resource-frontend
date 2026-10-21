@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { downloadBlob } from '../lib/pdf'
-import { CloseIcon, DownloadIcon } from './Icons'
+import Viewer from './Viewer'
 
 // PDF.js draws the pages itself, because phone browsers (Chrome on Android) do not show a PDF inside a page.
 // The legacy build also runs on older phone browsers; both it and its worker load only when a preview opens.
@@ -52,34 +52,11 @@ export default function PdfPreview({ pdf, onClose }) {
     }
   }, [pdf])
 
-  useEffect(() => {
-    const onKey = (event) => event.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   return (
-    <div className="pdf-preview" role="dialog" aria-modal="true" aria-label="Report preview">
-      <div className="pdf-bar">
-        <button type="button" className="icon-btn icon-btn-plain" onClick={onClose} aria-label="Close preview">
-          <CloseIcon />
-        </button>
-        <strong>Report preview</strong>
-        <span />
-      </div>
-
-      <div className="pdf-pages">
-        {status === 'loading' && <p className="note pdf-msg">Loading the preview…</p>}
-        {status === 'error' && <p className="note pdf-msg">The preview could not be shown here. You can still download the PDF.</p>}
-        <div ref={pagesRef} className="pdf-page-list" />
-      </div>
-
-      <div className="pdf-actions">
-        <button type="button" className="btn btn-primary btn-block" onClick={() => downloadBlob(pdf.blob, pdf.name)}>
-          <DownloadIcon />
-          <span>Download PDF</span>
-        </button>
-      </div>
-    </div>
+    <Viewer title="Report preview" onClose={onClose} download={{ label: 'Download PDF', onClick: () => downloadBlob(pdf.blob, pdf.name) }}>
+      {status === 'loading' && <p className="note viewer-msg">Loading the preview…</p>}
+      {status === 'error' && <p className="note viewer-msg">The preview could not be shown here. You can still download the PDF.</p>}
+      <div ref={pagesRef} className="pdf-page-list" />
+    </Viewer>
   )
 }
