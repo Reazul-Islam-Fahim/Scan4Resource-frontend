@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { formatChf, formatQty, formatTonnes } from '../lib/format'
+import { buildReportPdf } from '../lib/pdf'
 import { METHOD_NOTE } from '../lib/impact'
-import { exportReportPdf } from '../lib/pdf'
-import { CubeIcon, DocIcon, DownloadIcon, ImagesIcon, InfoIcon, LeafIcon, ShareIcon, ShopIcon, ChevronRight } from './Icons'
+import { ChevronRight, DocIcon, DownloadIcon, ImagesIcon, InfoIcon, LeafIcon, ShopIcon } from './Icons'
 import MaterialImage from './MaterialImage'
 import PageHeader from './PageHeader'
+import PdfPreview from './PdfPreview'
 
 export default function Report({ report, items, job, title, startedAt, save, onRetrySave, onBack, onNext }) {
   const [exporting, setExporting] = useState(false)
+  const [pdf, setPdf] = useState(null)
   const [notice, setNotice] = useState('')
   const [showSaved, setShowSaved] = useState(true)
 
@@ -24,18 +26,17 @@ export default function Report({ report, items, job, title, startedAt, save, onR
     return () => clearTimeout(timer)
   }, [save.status])
 
-  const share = async () => {
+  const preview = async () => {
     setExporting(true)
     try {
-      const result = await exportReportPdf(report, { title, startedAt, items })
-      if (result === 'downloaded') setNotice('PDF downloaded')
-      else if (result === 'shared') setNotice('PDF shared')
+      setPdf(await buildReportPdf(report, { title, startedAt, items }))
     } catch {
       setNotice('The PDF could not be created. Try again.')
     } finally {
       setExporting(false)
     }
   }
+  const closePreview = useCallback(() => setPdf(null), [])
 
   return (
     <section className="flow">
@@ -43,8 +44,8 @@ export default function Report({ report, items, job, title, startedAt, save, onR
         title="Reuse Report"
         onBack={onBack}
         action={
-          <button type="button" className="icon-btn icon-btn-plain" onClick={share} disabled={exporting} aria-label="Export as PDF">
-            <ShareIcon />
+          <button type="button" className="icon-btn icon-btn-plain" onClick={preview} disabled={exporting} aria-label="Preview the PDF">
+            <DocIcon />
           </button>
         }
       />
@@ -100,30 +101,23 @@ export default function Report({ report, items, job, title, startedAt, save, onR
       <h2 className="section-title section-gap">Downloads</h2>
       <ul className="download-list">
         <li>
-          <button type="button" className="download-row" onClick={share} disabled={exporting}>
+          <button type="button" className="download-row" onClick={preview} disabled={exporting}>
             <span className="download-icon">
               <DocIcon />
             </span>
             <span className="download-text">
               <strong>Report</strong>
-              <span>{exporting ? 'Creating the PDF…' : 'PDF with the items, CO₂ and resale value'}</span>
+              <span>{exporting ? 'Creating the PDF…' : 'Preview and download the PDF'}</span>
             </span>
             <DownloadIcon />
           </button>
         </li>
         <FileDownload
-          href={job?.model}
-          icon={<CubeIcon />}
-          name="3D model"
-          detail="GLB file for any 3D viewer or Blender"
-          missing="Available after a scan is processed on the server"
-        />
-        <FileDownload
           href={job?.masks}
           icon={<ImagesIcon />}
           name="Mask images"
           detail={job?.maskFrames?.length ? `ZIP with ${job.maskFrames.length} frames, objects outlined` : 'ZIP of frames with the objects outlined'}
-          missing={job?.model ? 'No objects were outlined in this scan' : 'Available after a scan is processed on the server'}
+          missing={job?.status === 'done' ? 'No objects were outlined in this scan' : 'Available after a scan is processed on the server'}
         />
       </ul>
 
@@ -151,6 +145,8 @@ export default function Report({ report, items, job, title, startedAt, save, onR
           </button>
         </div>
       </div>
+
+      {pdf && <PdfPreview pdf={pdf} onClose={closePreview} />}
     </section>
   )
 }

@@ -36,9 +36,9 @@ Run it, then either:
 | --- | --- | --- |
 | Home | `#/` | Start scanning. Tabs: Home, Scans, Reports, Profile |
 | Camera | `#/scan` | **Start scanning** on Home. **Photo**: the shutter takes a photo. **Video**: the shutter starts and stops a recording. The gallery button adds photos or videos from the device, the flip button switches cameras. All of them can be mixed. **Finish** (top right, with the number of captures) uploads them. |
-| Processing | `#/upload` | Uploads the captures with a progress bar, then follows the server: it builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
+| Processing | `#/upload` | Uploads the captures with a progress bar, then follows the server while it counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
 | Detected items | `#/items` | One row per label with its count. Tap a row to correct quantity, material, condition (doors: width and height) or remove an item. **Generate Reuse Report** saves the scan and continues. With nothing detected, sample items are shown, marked as sample data. |
-| Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. **Downloads** gives the report as a PDF (phone share sheet where supported, otherwise a download; the share icon does the same), the 3D model (`scene.glb`) and the mask images (`masks.zip`); the last two come from the server and are only there for an uploaded scan that finished processing. **Find buyers / next steps** opens the marketplace. |
+| Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. **Downloads**: **Report** (and the document icon in the header) opens a preview of the PDF, drawn with PDF.js so it also works on phones, with a **Download PDF** button. **Mask images** (`masks.zip`) comes from the server and is only there for an uploaded scan that finished processing. **Find buyers / next steps** opens the marketplace. |
 | Reuse Marketplace | `#/market` | Search, category chips, 2-column cards with a heart (kept in the browser). The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. Scanned materials come first. |
 | Material sources | `#/map` | A map of Switzerland with clustered sources (tap a cluster to zoom in), a details card, type chips, search, a canton filter and a list view. |
 | Scans | `#/scans` | Saved scans. **Open report** reloads one into the report; a scan can be deleted. |
@@ -90,7 +90,7 @@ The backend's live `POST /detect` endpoint is no longer used by the app.
 
 Upload: `multipart/form-data` with every file as `files` and `scan_id`. The answer (202) is the job; the app then
 asks for `GET /reconstructions/{id}` every 3 seconds until `status` is `done` or `failed`, and shows `stage`
-(`picking frames`, `building 3D model`, `finding objects (frame 3 of 12)`) as progress. When it is done, `objects`
+(`picking frames`, `measuring`, `finding objects (frame 3 of 12)`) as progress. When it is done, `objects`
 are added to the scan like detections (each with `width_cm`, `height_cm`, `depth_cm`, `material`, `partial`), and
 `files.mask_frames` (paths on the API) are shown. `partial: true` means the object was only partly seen, so its
 size is a lower bound: the item is marked "size uncertain" until the person types a measurement.
@@ -138,7 +138,8 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | `src/components/Scanner.jsx` | Camera: Photo/Video, shutter, recording, gallery, flip, Finish |
 | `src/components/Upload.jsx`, `src/hooks/useJobPoll.js` | Upload the captures and follow their processing on the server |
 | `src/components/DetectedItems.jsx`, `ItemSheet.jsx` | Label-and-count list and the editor for one label |
-| `src/components/Report.jsx` | Reuse Report and its downloads (PDF, 3D model, mask images) |
+| `src/components/PdfPreview.jsx` | Full-screen PDF preview (PDF.js, loaded on demand) with Download |
+| `src/components/Report.jsx` | Reuse Report and its downloads (PDF, mask images) |
 | `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |
 | `src/components/MapScreen.jsx` | Map of material sources |
 | `src/components/Scans.jsx` | Saved scans |

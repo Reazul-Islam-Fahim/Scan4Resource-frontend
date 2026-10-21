@@ -166,7 +166,7 @@ export async function listScans() {
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
 }
 
-// ---- Upload a walkthrough, processed on the server (3D model, objects, sizes) ----------------
+// ---- Upload a walkthrough, processed on the server (objects, sizes) ----------------
 
 /** File links in a job are paths on the API ("/reconstructions/..."); make them loadable. */
 export const fileUrl = (path) => (!path || /^(https?:|data:|blob:)/.test(path) ? path : `${BASE}${path}`)
@@ -181,7 +181,6 @@ function normalizeJob(raw) {
     warning: raw.warning ?? '',
     items: (raw.objects ?? []).map((item) => normalizeDetection(item)).filter(Boolean),
     maskFrames: (files.mask_frames ?? []).map(fileUrl),
-    model: fileUrl(files.model ?? null),
     masks: fileUrl(files.masks ?? null),
   }
 }

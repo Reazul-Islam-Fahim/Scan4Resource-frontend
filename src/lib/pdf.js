@@ -10,11 +10,10 @@ const slug = (text) =>
   text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
 
 /**
- * Lay the reuse report out as an A4 PDF and hand it to the phone's share sheet where that works,
- * otherwise download it. Loaded on demand so the app itself stays small.
- * Returns 'shared', 'downloaded' or 'cancelled'.
+ * Lay the reuse report out as an A4 PDF. Returns the file as a blob with the name to save it under.
+ * Loaded on demand so the app itself stays small.
  */
-export async function exportReportPdf(report, { title, startedAt, items = [] }) {
+export async function buildReportPdf(report, { title, startedAt, items = [] }) {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -171,18 +170,17 @@ export async function exportReportPdf(report, { title, startedAt, items = [] }) 
 
   const stamp = new Date(startedAt || Date.now()).toISOString().slice(0, 10)
   const name = `scan4reuse-report-${slug(title) || 'scan'}-${stamp}.pdf`.replace(/-+/g, '-')
-  const blob = doc.output('blob')
-  const file = new File([blob], name, { type: 'application/pdf' })
+  return { blob: doc.output('blob'), name }
+}
 
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: 'Reuse Report' })
-      return 'shared'
-    } catch (err) {
-      if (err?.name === 'AbortError') return 'cancelled'
-      // Sharing failed for another reason: fall through to a download.
-    }
-  }
-  doc.save(name)
-  return 'downloaded'
+/** Save a blob as a file in the browser's downloads. */
+export function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
