@@ -38,7 +38,7 @@ Run it, then either:
 | Camera | `#/scan` | **Start scanning** on Home. **Photo**: the shutter takes a photo. **Video**: the shutter starts and stops a recording. The gallery button adds photos or videos from the device, the flip button switches cameras. All of them can be mixed. **Finish** (top right, with the number of captures) uploads them. |
 | Processing | `#/upload` | Uploads the captures with a progress bar, then follows the server: it builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
 | Detected items | `#/items` | One row per label with its count. Tap a row to correct quantity, material, condition (doors: width and height) or remove an item. **Generate Reuse Report** saves the scan and continues. With nothing detected, sample items are shown, marked as sample data. |
-| Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. **Downloads** gives the report as a PDF (phone share sheet where supported, otherwise a download; the share icon does the same), the 3D model (`scene.glb`) and the mask images (`masks.zip`); the last two come from the server and are only there for an uploaded scan that finished processing. **Find buyers / next steps** opens the marketplace. |
+| Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. The export icon in the top bar sends the PDF to the phone's share sheet (a download where sharing is not supported). **Downloads** has **Preview** and **Download** for the report PDF (drawn with PDF.js, so the preview also works on phones), the 3D model (`scene.glb`, turned with a finger in a three.js viewer) and the mask images (every frame with the objects outlined; `masks.zip`). The 3D model and mask images come from the server and are only there for an uploaded scan that finished processing. **Find buyers / next steps** opens the marketplace. |
 | Reuse Marketplace | `#/market` | Search, category chips, 2-column cards with a heart (kept in the browser). The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. Scanned materials come first. |
 | Material sources | `#/map` | A map of Switzerland with clustered sources (tap a cluster to zoom in), a details card, type chips, search, a canton filter and a list view. |
 | Scans | `#/scans` | Saved scans. **Open report** reloads one into the report; a scan can be deleted. |
@@ -138,7 +138,8 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | `src/components/Scanner.jsx` | Camera: Photo/Video, shutter, recording, gallery, flip, Finish |
 | `src/components/Upload.jsx`, `src/hooks/useJobPoll.js` | Upload the captures and follow their processing on the server |
 | `src/components/DetectedItems.jsx`, `ItemSheet.jsx` | Label-and-count list and the editor for one label |
-| `src/components/Report.jsx` | Reuse Report and its downloads (PDF, 3D model, mask images) |
+| `src/components/Report.jsx` | Reuse Report, PDF export and the downloads (PDF, 3D model, mask images) |
+| `src/components/Viewer.jsx`, `PdfPreview.jsx`, `ModelPreview.jsx`, `MaskPreview.jsx` | Full-screen previews with Download; PDF.js and three.js load only when a preview opens |
 | `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |
 | `src/components/MapScreen.jsx` | Map of material sources |
 | `src/components/Scans.jsx` | Saved scans |
