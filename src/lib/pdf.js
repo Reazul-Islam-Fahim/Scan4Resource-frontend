@@ -1,10 +1,40 @@
-import { METHOD_NOTE } from './impact'
-import { conditionLabel, formatChf, formatDate, formatQty, formatSize, formatTonnes, markOf } from './format'
+import { METHOD_NOTE, itemImpact } from './impact'
+import { conditionLabel, formatChf, formatDate, formatQty, formatTonnes } from './format'
+import { materialText } from './items'
 
 const GREEN = [1, 128, 88]
 const MINT = [228, 243, 236]
 const INK = [16, 48, 42]
 const GREY = [96, 112, 108]
+
+const PHOTO_MM = 18
+
+const isPhoto = (src) => typeof src === 'string' && /^data:image\/(jpe?g|png);/.test(src)
+
+// The id the server gave the object ("door-2"), which the mask images show too; otherwise a number in its group.
+const objectId = (item, name, index) =>
+  /^[a-z][a-z _]*-\d+$/i.test(item.id ?? '') ? item.id : `${name.toLowerCase()}-${index + 1}`
+
+const formatSize3 = (item) => {
+  const parts = [item.widthCm, item.heightCm, item.depthCm].map((v) => (Number.isFinite(v) ? Math.round(v) : null))
+  if (parts.every((v) => v === null)) return '-'
+  const dims = (parts[2] === null ? parts.slice(0, 2) : parts).map((v) => v ?? '?').join(' × ')
+  return `${item.partial ? '~ ' : ''}${dims} cm`
+}
+
+// The object's photo, as large as fits in the cell, centred, keeping its shape.
+function drawPhoto(doc, src, cell) {
+  try {
+    const { width, height } = doc.getImageProperties(src)
+    const box = Math.min(PHOTO_MM, cell.width - 2, cell.height - 2)
+    const scale = box / Math.max(width, height)
+    const w = width * scale
+    const h = height * scale
+    doc.addImage(src, cell.x + (cell.width - w) / 2, cell.y + (cell.height - h) / 2, w, h)
+  } catch {
+    // A photo that cannot be read is left out; the row still names the object.
+  }
+}
 
 const slug = (text) =>
   text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
@@ -117,28 +147,71 @@ export async function buildReportPdf(report, { title, startedAt, items = [] }) {
     },
   })
 
-  // Door schedule: only for real scans that measured doors
-  const doors = items.filter((item) => item.label === 'doors')
-  if (!report.isSample && doors.length > 0) {
-    const after = doc.lastAutoTable.finalY + 12
+  // Object details: one table per kind of object, one row per object with its photo, so each one can be found
+  // on site and in the mask images (which label objects with the same id). Only for real scans.
+  if (!report.isSample) {
+    let after = doc.lastAutoTable.finalY + 12
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(12)
     doc.setTextColor(...INK)
-    doc.text('Door schedule', page.m, after)
-    autoTable(doc, {
-      startY: after + 3,
-      margin: { left: page.m, right: page.m },
-      head: [['Mark', 'Size', 'Material', 'Condition']],
-      body: doors.map((door, index) => [
-        markOf(index),
-        formatSize(door),
-        door.material && door.material !== 'unknown' ? door.material[0].toUpperCase() + door.material.slice(1) : 'Unknown',
-        conditionLabel(door.condition) || '-',
-      ]),
-      theme: 'plain',
-      styles: { font: 'helvetica', fontSize: 10, textColor: INK, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 } },
-      headStyles: { fillColor: GREEN, textColor: 255, fontStyle: 'bold' },
-    })
+    if (after > page.h - 50) {
+      doc.addPage()
+      after = 20
+    }
+    doc.text('Object details', page.m, after)
+    after += 4
+
+    for (const row of report.rows) {
+      const list = items.filter((item) => item.label === row.label)
+      if (list.length === 0) continue
+      const withPhotos = list.some((item) => isPhoto(item.image))
+      const rowH = withPhotos ? PHOTO_MM + 4 : 0
+
+      autoTable(doc, {
+        startY: after + 3,
+        margin: { left: page.m, right: page.m, bottom: 26 }, // room for the method note on the last page
+        head: [
+          [{ content: `${row.name} (${list.length})`, colSpan: 7, styles: { fillColor: MINT, textColor: GREEN, fontSize: 11 } }],
+          ['Photo', 'ID', 'Size (W × H × D)', 'Material', 'Condition', 'Qty', 'Est. value'],
+        ],
+        body: list.map((item, index) => [
+          isPhoto(item.image) ? '' : '-',
+          objectId(item, row.name, index),
+          formatSize3(item),
+          materialText(item),
+          conditionLabel(item.condition).replace(' condition', '') || '-',
+          formatQty(Number.isFinite(item.quantity) ? item.quantity : 1, item.unit || row.unit),
+          formatChf(itemImpact(item).resale),
+        ]),
+        theme: 'plain',
+        rowPageBreak: 'avoid',
+        showHead: 'everyPage',
+        styles: { font: 'helvetica', fontSize: 9.5, textColor: INK, valign: 'middle', cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
+        headStyles: { fillColor: GREEN, textColor: 255, fontStyle: 'bold' },
+        bodyStyles: { minCellHeight: rowH },
+        // The same widths in every table, so the columns line up down the page.
+        columnStyles: {
+          0: { cellWidth: 24 },
+          1: { cellWidth: 30, fontStyle: 'bold' },
+          2: { cellWidth: 38 },
+          3: { cellWidth: 24 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 14, halign: 'right' },
+          6: { cellWidth: inner - 152, halign: 'right', textColor: GREEN, fontStyle: 'bold' },
+        },
+        didParseCell: (data) => {
+          if (data.section === 'head' && data.row.index === 1 && data.column.index >= 5) data.cell.styles.halign = 'right'
+        },
+        didDrawCell: (data) => {
+          if (data.section !== 'body') return
+          doc.setDrawColor(226, 233, 230)
+          doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height)
+          const image = list[data.row.index]?.image
+          if (data.column.index === 0 && isPhoto(image)) drawPhoto(doc, image, data.cell)
+        },
+      })
+      after = doc.lastAutoTable.finalY + 6
+    }
   }
 
   // Note, page numbers, watermark
