@@ -2953,3 +2953,169 @@ a.btn {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* ---- tenders ---- */
+.tender-row {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tender-row > span {
+  width: 100%;
+}
+
+.tender-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+}
+
+.tender-lines {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tender-lines li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.tender-lines li > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tender-qty {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cover {
+  display: block;
+  width: 90px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.cover > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+
+.tender-line-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.tender-line-edit .field {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.tender-line-edit .field.grow {
+  flex: 2 1 220px;
+}
+
+.tender-line-edit .field.narrow {
+  flex: 0 1 120px;
+}
+
+.tender-line-edit .text-btn {
+  align-self: center;
+}
+
+.bid-line-title {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  float: left;
+}
+
+.row-actions.start {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.back-link {
+  justify-self: start;
+}
+
+.bid-card {
+  display: grid;
+  gap: 10px;
+}
+
+.bid-card.is-selected {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green);
+}
+
+.bid-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.bid-pick input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--green);
+}
+
+.order-lines.plain li {
+  grid-template-columns: 1fr auto;
+}
+
+.award-bar {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.award-bar > span {
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 760px) {
+  .award-bar {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.bid-card .order-pay > span:last-child {
+  white-space: nowrap;
+}
