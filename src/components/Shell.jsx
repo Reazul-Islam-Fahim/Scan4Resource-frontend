@@ -6,7 +6,7 @@ import { MarketTabs, ScanTabs } from './TabBars'
 export default function Shell({ onScan }) {
   const { pathname } = useLocation()
   const market = pathname === '/market' || pathname === '/map'
-  const flow = pathname === '/items' || pathname === '/report' || pathname === '/upload'
+  const flow = ['/items', '/report', '/upload', '/sell', '/cart'].includes(pathname)
 
   useEffect(() => {
     window.scrollTo(0, 0)

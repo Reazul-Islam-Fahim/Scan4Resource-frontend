@@ -1,8 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import useCart from '../hooks/useCart'
+import useListings from '../hooks/useListings'
+import { isMock } from '../lib/api'
 import { buildListings, filterListings, listingsPerCanton, priceBounds } from '../lib/market'
 import { CATEGORIES } from '../lib/materials'
-import { BellIcon, SearchIcon, SlidersIcon } from './Icons'
+import { BagIcon, SearchIcon, SlidersIcon } from './Icons'
 import FilterSheet from './market/FilterSheet'
+import ListingSheet from './market/ListingSheet'
 import ProductCard from './market/ProductCard'
 
 const FAV_KEY = 's4r.favourites'
@@ -16,8 +21,13 @@ function loadFavourites() {
   }
 }
 
+/** The published listings, live: a new listing, a price change or a sell-out shows up without a reload.
+ *  Without a backend (demo mode) the sample marketplace is shown instead. */
 export default function Market({ report }) {
-  const listings = useMemo(() => buildListings(report), [report])
+  const live = useListings()
+  const cart = useCart()
+  const samples = useMemo(() => (isMock ? buildListings(report) : []), [report])
+  const listings = isMock ? samples : live.listings
   const bounds = useMemo(() => priceBounds(listings), [listings])
   const counts = useMemo(() => listingsPerCanton(listings), [listings])
 
@@ -26,7 +36,8 @@ export default function Market({ report }) {
   const [filters, setFilters] = useState({ price: null, cantons: [] })
   const [sheet, setSheet] = useState(false)
   const [favourites, setFavourites] = useState(loadFavourites)
-  const [notice, setNotice] = useState(false)
+  const [openId, setOpenId] = useState(null)
+  const open = listings.find((l) => l.id === openId) ?? null
 
   const results = useMemo(
     () => filterListings(listings, { query, category, price: filters.price, cantons: filters.cantons }),
@@ -63,14 +74,19 @@ export default function Market({ report }) {
         <h1 className="display">
           Reuse <span className="accent">Marketplace</span>
         </h1>
-        <button type="button" className="icon-btn icon-btn-light" onClick={() => setNotice((v) => !v)} aria-label="Notifications" aria-expanded={notice}>
-          <BellIcon />
-        </button>
+        <Link to="/cart" className="icon-btn icon-btn-light filter-btn" aria-label={cart.count ? `Cart, ${cart.count} items` : 'Cart'}>
+          <BagIcon />
+          {cart.count > 0 && <span className="filter-badge">{cart.count}</span>}
+        </Link>
         <p className="lede">Give building materials a second life.</p>
       </header>
-      {notice && (
-        <p className="toast toast-inline" role="status">
-          You have no new notifications.
+      {isMock && <p className="sample-note">Demo mode: sample listings. Set VITE_API_URL to show the live marketplace.</p>}
+      {live.status === 'error' && !isMock && (
+        <p className="error" role="alert">
+          The marketplace could not be loaded. {live.error}{' '}
+          <button type="button" className="text-btn" onClick={live.reload}>
+            Try again
+          </button>
         </p>
       )}
 
@@ -102,7 +118,16 @@ export default function Market({ report }) {
         </p>
       )}
 
-      {results.length === 0 ? (
+      {live.status === 'loading' && !isMock ? (
+        <p className="lede">Loading listings…</p>
+      ) : listings.length === 0 && !isMock ? (
+        <div className="empty empty-center">
+          <p className="lede">Nothing is listed yet. Sellers publish materials from their scan reports.</p>
+          <Link to="/dashboard" className="btn btn-secondary">
+            Sell materials
+          </Link>
+        </div>
+      ) : results.length === 0 ? (
         <div className="empty empty-center">
           <p className="lede">No listings match. Try a different search or clear the filters.</p>
           <button type="button" className="btn btn-secondary" onClick={clearAll}>
@@ -112,10 +137,12 @@ export default function Market({ report }) {
       ) : (
         <div className="grid">
           {results.map((listing) => (
-            <ProductCard key={listing.id} listing={listing} favourite={favourites.includes(listing.id)} onToggle={toggleFavourite} />
+            <ProductCard key={listing.id} listing={listing} favourite={favourites.includes(listing.id)} onToggle={toggleFavourite} onOpen={() => setOpenId(listing.id)} />
           ))}
         </div>
       )}
+
+      {open && <ListingSheet listing={open} demo={isMock} onClose={() => setOpenId(null)} />}
 
       {sheet && (
         <FilterSheet

@@ -161,7 +161,7 @@ export default function Report({ report, items, job, title, startedAt, save, onR
           )}
           <button type="button" className="btn btn-primary btn-block btn-arrow" onClick={onNext}>
             <ShopIcon />
-            <span>Find buyers / next steps</span>
+            <span>{report.isSample ? 'See the marketplace' : 'Sell on the marketplace'}</span>
             <ChevronRight />
           </button>
         </div>
