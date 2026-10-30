@@ -74,3 +74,10 @@ export function formatQty(quantity, unit) {
   const q = Number.isInteger(quantity) ? quantity : round1(quantity)
   return unit === 'm2' ? `~ ${q} m²` : `${q}x`
 }
+
+/** Money in the ledger: always to the rappen, e.g. CHF 1'234.50. */
+export const formatMoney = (value) => {
+  const sign = value < 0 ? '−' : ''
+  const [whole, cents] = Math.abs(value).toFixed(2).split('.')
+  return `${sign}CHF ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, "'")}.${cents}`
+}

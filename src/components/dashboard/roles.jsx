@@ -3,6 +3,7 @@ import { AccountPage } from './Account'
 import { AdminActivity, AdminOverview, AdminUsers, AdminVerification } from './Admin'
 import { BuyerOverview, CorporateOverview, LogisticsOverview, SellerOverview } from './Overviews'
 import EmptyPanel from './EmptyPanel'
+import { AdminPayouts, SellerEarnings } from './Finance'
 import { BuyerOrders, SellerListings, SellerPartners, SellerSales } from './Market'
 
 // Each role's dashboard: the pages in its menu. The first one opens after login.
@@ -25,7 +26,7 @@ export const DASHBOARDS = {
     { path: 'listings', label: 'Listings', icon: ShopIcon, element: <SellerListings /> },
     { path: 'orders', label: 'Orders', icon: BagIcon, element: <SellerSales /> },
     { path: 'partners', label: 'Pickup & partners', icon: TruckIcon, element: <SellerPartners /> },
-    { path: 'payouts', label: 'Balance & payouts', icon: WalletIcon, element: <EmptyPanel icon={WalletIcon} title="Balance & payouts" text="Your sales minus the 10% Scan4Reuse commission. Request a payout once a delivery is confirmed; the Scan4Reuse team approves it." /> },
+    { path: 'payouts', label: 'Balance & payouts', icon: WalletIcon, element: <SellerEarnings /> },
     account,
   ],
   logistics: [
@@ -36,7 +37,7 @@ export const DASHBOARDS = {
     { path: '', label: 'Overview', icon: GridIcon, element: <AdminOverview /> },
     { path: 'verification', label: 'Verification', icon: ShieldIcon, element: <AdminVerification /> },
     { path: 'users', label: 'Users', icon: UsersIcon, element: <AdminUsers /> },
-    { path: 'payouts', label: 'Payouts', icon: WalletIcon, element: <EmptyPanel icon={WalletIcon} title="Payout requests" text="Sellers and logistics companies request payouts from their balance. Approve to send the money with Stripe, or reject with a reason." /> },
+    { path: 'payouts', label: 'Payments & payouts', icon: WalletIcon, element: <AdminPayouts /> },
     { path: 'activity', label: 'Activity', icon: ClockIcon, element: <AdminActivity /> },
     account,
   ],

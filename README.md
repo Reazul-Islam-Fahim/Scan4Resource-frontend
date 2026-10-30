@@ -65,8 +65,13 @@ listens to `/market/events`, so a new listing, a price change or a sell-out appe
   a buyer or corporate buyer is asked for at that point, and the cart is kept.
 - **Delivery:** after ordering, the buyer goes straight to the logistics app's checkout (`VITE_LOGISTICS_URL`) to
   pick a logistics company for each pickup. **Orders** in the buyer's dashboard shows the delivery status
-  (not booked yet, booked, delivered) with **Book delivery** or **Delivery details**. An order can be cancelled
-  only until delivery is booked.
+  (not booked yet, booked, delivered) with **Book delivery**, **Pay** or **Delivery details**. Once every company
+  has accepted, the buyer pays materials and delivery together by card (Stripe) in the logistics app. An order can
+  be cancelled only until delivery is booked.
+- **Money:** sellers see their balance in **Balance & payouts** (`#/dashboard/payouts`): each sale is credited when
+  delivered and paid, minus the 10% commission, and they request payouts to a Swiss IBAN. Admins see what buyers
+  paid, the commission and the balances owed in **Payments & payouts**, and mark payout requests paid once the bank
+  transfer is made, or reject them with a note.
 - **Map** (`#/map`): MapLibre with swisstopo's light base map, one point per listing (rounded to about 1 km),
   clustered until you zoom in, with the category chips, search, canton filter, list view and **near me**.
   Distances are measured from your location once you allow it, else from Zürich.

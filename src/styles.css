@@ -2916,3 +2916,40 @@ a.btn {
 .cart-group .section-title {
   margin-top: 0;
 }
+
+/* ---- balance, payouts and payments ---- */
+.dash-table.ledger .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dash-stat .note {
+  font-size: 12.5px;
+}
+
+.plain-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.note.block {
+  display: block;
+}
+
+.order-pay {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+
+.pill-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
