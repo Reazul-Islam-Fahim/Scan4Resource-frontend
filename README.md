@@ -28,6 +28,30 @@ Run it, then either:
 - during development, set `VITE_API_URL=/api` and `API_TARGET=http://localhost:8000` in `.env.local`. The dev
   server then forwards `/api/...` to the backend, so no CORS setup is needed.
 
+## Accounts and dashboards (logistics branch)
+
+Scan4Reuse is **scan → marketplace → logistics**, used by five roles: buyer, corporate buyer, seller, logistics
+company and admin. Everyone logs in on the same page (`#/login`), picks their role there, and lands on that role's
+dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
+
+| Role | Dashboard pages |
+| --- | --- |
+| Buyer | Overview, Orders, Account |
+| Corporate buyer | Overview, Tenders, Orders, Account |
+| Seller | Overview, Listings, Orders, Logistics partners, Balance & payouts, Account |
+| Logistics company | Sent straight to the [logistics app](https://github.com/Reazul-Islam-Fahim/Scan4Resource-logistics-frontend), already logged in |
+| Admin | Overview, Verification (approve corporate buyers and logistics companies), Users (add admins), Payouts, Activity, Account |
+
+`#/signup` creates buyer, seller, corporate buyer and logistics company accounts; the last two wait for an admin
+to verify the company. One account can hold several roles (add them under Account, then switch). Admins are
+created with the backend's `scripts/create_admin.py`, then by other admins. Logging in needs the backend.
+
+Set `VITE_LOGISTICS_URL` (locally `http://localhost:5174`) so logistics companies are sent to the logistics app,
+which in turn sends people here to log in (`#/login?app=logistics&next=...`) and gets the login back.
+
+Orders, listings, tenders and payouts are empty pages in this step; they fill in as the marketplace, delivery
+and payments are connected.
+
 ## The flow
 
 `Home → Camera → Processing → Detected items → Reuse Report → Marketplace` (and a Map of material sources)
@@ -150,3 +174,6 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | `src/lib/pdf.js` | The PDF (`jspdf`, loaded only on export) |
 | `src/lib/swissMap.js` | Generated map paths (swisstopo, via the `swiss-maps` package) |
 | `src/lib/api.js`, `mock.js`, `session.js` | Network calls, demo mode, merging detections |
+| `src/lib/auth.js`, `src/hooks/useAuth.jsx` | Login, sign-up, roles, the stored token, admin calls |
+| `src/components/auth/` | The shared login page with the role picker, and sign-up |
+| `src/components/dashboard/` | The dashboard frame and each role's pages (`roles.jsx` lists them) |

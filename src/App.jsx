@@ -5,6 +5,9 @@ import useJobPoll from './hooks/useJobPoll'
 import { defaultScanName } from './lib/format'
 import { buildReport } from './lib/items'
 import { clearSession, loadSession, mergeDetections, newSession, sessionFromScan, storeSession } from './lib/session'
+import Login from './components/auth/Login'
+import Signup from './components/auth/Signup'
+import Dashboard from './components/dashboard/Dashboard'
 import DetectedItems from './components/DetectedItems'
 import Home from './components/Home'
 import MapScreen from './components/MapScreen'
@@ -17,6 +20,7 @@ import Shell from './components/Shell'
 import Upload from './components/Upload'
 
 // Home -> camera (or upload) -> detected items -> reuse report -> marketplace (and the map).
+// One login page for every role (/login), then that role's dashboard (/dashboard).
 
 // What the session keeps of an upload job: its state and links, not the items (those are merged in).
 const jobSummary = (job, previous = {}) => ({
@@ -131,6 +135,9 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/dashboard/*" element={<Dashboard />} />
       <Route
         path="/scan"
         element={

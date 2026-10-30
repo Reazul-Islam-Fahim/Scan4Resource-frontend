@@ -34,7 +34,7 @@ export function describeError(err) {
   return 'The connection failed. Check your internet connection and try again.'
 }
 
-async function request(path, options = {}, timeoutMs = 10000) {
+export async function request(path, options = {}, timeoutMs = 10000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
