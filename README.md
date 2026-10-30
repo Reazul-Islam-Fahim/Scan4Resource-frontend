@@ -63,6 +63,10 @@ listens to `/market/events`, so a new listing, a price change or a sell-out appe
 - **Buy:** tap a card for the details, choose the quantity and add it to the cart (kept in the browser). The cart
   (`#/cart`) asks for a Swiss delivery address and places the order, which reserves the materials. Logging in as
   a buyer or corporate buyer is asked for at that point, and the cart is kept.
+- **Delivery:** after ordering, the buyer goes straight to the logistics app's checkout (`VITE_LOGISTICS_URL`) to
+  pick a logistics company for each pickup. **Orders** in the buyer's dashboard shows the delivery status
+  (not booked yet, booked, delivered) with **Book delivery** or **Delivery details**. An order can be cancelled
+  only until delivery is booked.
 - **Map** (`#/map`): MapLibre with swisstopo's light base map, one point per listing (rounded to about 1 km),
   clustered until you zoom in, with the category chips, search, canton filter, list view and **near me**.
   Distances are measured from your location once you allow it, else from Zürich.

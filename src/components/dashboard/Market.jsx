@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
+import { logisticsUrl } from '../../lib/auth'
 import { formatPrice } from '../../lib/format'
 import {
   cancelOrder,
@@ -36,11 +37,11 @@ function useLoad(load) {
 }
 
 const LISTING_STATUS = { draft: 'Draft', active: 'Published', sold: 'Sold out', withdrawn: 'Withdrawn' }
-const ORDER_STATUS = { awaiting_delivery: 'Waiting for delivery booking', cancelled: 'Cancelled' }
+const ORDER_STATUS = { awaiting_delivery: 'Delivery not booked yet', delivery_booked: 'Delivery booked', delivered: 'Delivered', cancelled: 'Cancelled' }
 const qty = (q, unit) => (unit === 'm2' ? `${q} m²` : `${q}×`)
 
 function Pill({ status, labels }) {
-  const tone = status === 'active' || status === 'awaiting_delivery' ? '' : status === 'draft' ? ' status-pending' : ' status-rejected'
+  const tone = ['active', 'delivery_booked', 'delivered'].includes(status) ? '' : status === 'draft' || status === 'awaiting_delivery' ? ' status-pending' : ' status-rejected'
   return <span className={`status-pill${tone}`}>{labels[status] ?? status}</span>
 }
 
@@ -184,7 +185,7 @@ export function SellerSales() {
     <section className="dash-section">
       <header>
         <h1 className="dash-title">Orders</h1>
-        <p className="lede">What buyers ordered from you. The pickup is booked with a logistics company in the next step.</p>
+        <p className="lede">What buyers ordered from you. Once the buyer books delivery, the logistics company contacts you about the pickup.</p>
       </header>
       {error && <p className="error">{error}</p>}
       {data && data.length === 0 && <p className="dash-card note">No orders yet. They appear here as soon as someone buys.</p>}
@@ -213,7 +214,7 @@ export function BuyerOrders() {
       <header className="dash-head">
         <div>
           <h1 className="dash-title">Orders</h1>
-          <p className="lede">Your materials are reserved. Delivery is booked with a logistics company in the next step.</p>
+          <p className="lede">Your materials are reserved. Book the delivery: logistics companies offer a price for each pickup.</p>
         </div>
         <Link to="/market" className="btn btn-secondary">
           Browse the marketplace
@@ -224,13 +225,18 @@ export function BuyerOrders() {
       {data && data.length === 0 && <p className="dash-card note">No orders yet.</p>}
       {(data ?? []).map((order) => (
         <OrderCard key={order.id} order={order}>
-          {order.status === 'awaiting_delivery' && (
-            <div className="row-actions">
+          <div className="row-actions">
+            {order.status !== 'cancelled' && logisticsUrl(token) && (
+              <a className={`btn ${order.status === 'awaiting_delivery' ? 'btn-primary' : 'btn-secondary'}`} href={logisticsUrl(token, `/checkout?order=${order.id}`)}>
+                {order.status === 'awaiting_delivery' ? 'Book delivery' : 'Delivery details'}
+              </a>
+            )}
+            {order.status === 'awaiting_delivery' && (
               <button type="button" className="btn btn-outline" onClick={() => cancel(order)}>
                 Cancel order
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </OrderCard>
       ))}
     </section>

@@ -26,7 +26,8 @@ function useFigures(load) {
   return (fn) => (data === undefined ? '…' : data === null ? '—' : fn(data))
 }
 
-const openOrders = (orders) => orders.filter((o) => o.status === 'awaiting_delivery').length
+const openOrders = (orders) => orders.filter((o) => o.status === 'awaiting_delivery' || o.status === 'delivery_booked').length
+const onTheWay = (orders) => orders.filter((o) => o.status === 'delivery_booked').length
 const spent = (orders) => formatPrice(orders.filter((o) => o.status !== 'cancelled').reduce((sum, o) => sum + o.goods_chf, 0))
 
 /** Figures that fill in as orders come in. */
@@ -61,7 +62,7 @@ export function BuyerOverview() {
   return (
     <section className="dash-section">
       <Greeting>Find reclaimed materials near you and have them delivered.</Greeting>
-      <Stats items={[['Open orders', figure(openOrders)], ['Deliveries on the way', 0], ['Spent', figure(spent)]]} />
+      <Stats items={[['Open orders', figure(openOrders)], ['Deliveries booked', figure(onTheWay)], ['Spent', figure(spent)]]} />
       <Step to="/market" title="Browse the marketplace" text="Materials scanned by sellers across Switzerland" />
       <Step to="/map" title="See materials on the map" text="Find what is closest to your site" />
     </section>

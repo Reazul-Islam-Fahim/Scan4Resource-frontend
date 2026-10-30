@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 import useCart from '../hooks/useCart'
 import { describeError } from '../lib/api'
+import { logisticsUrl } from '../lib/auth'
 import { formatPrice } from '../lib/format'
 import { placeOrder } from '../lib/marketApi'
 import AddressField from './AddressField'
@@ -32,13 +33,16 @@ export default function Cart() {
     setBusy(true)
     setError('')
     try {
-      await placeOrder(auth.token, {
+      const placed = await placeOrder(auth.token, {
         items: cart.lines.map((line) => ({ listing_id: line.id, quantity: line.quantity })),
         delivery,
         note,
       })
       cart.clear()
-      navigate('/dashboard/orders', { state: { placed: true } })
+      // straight on to booking the delivery in the logistics app, when it is configured
+      const next = logisticsUrl(auth.token, `/checkout?order=${placed.id}`)
+      if (next) window.location.assign(next)
+      else navigate('/dashboard/orders', { state: { placed: true } })
     } catch (err) {
       setError(err.detail || describeError(err))
       setBusy(false)
@@ -124,7 +128,7 @@ export default function Cart() {
           )}
           {canBuy ? (
             <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-              {busy ? 'Placing the order…' : 'Order and reserve the materials'}
+              {busy ? 'Placing the order…' : 'Order and choose delivery'}
             </button>
           ) : heldBuyerRole ? (
             <button type="button" className="btn btn-primary btn-block" onClick={() => auth.switchRole(heldBuyerRole.role)}>
