@@ -38,9 +38,9 @@ dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
 | --- | --- |
 | Buyer | Overview, Orders, Account |
 | Corporate buyer | Overview, Tenders, Orders, Account |
-| Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Pickup & partners, Balance & payouts, Account |
+| Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Tenders, Pickup & partners, Balance & payouts, Account |
 | Logistics company | Sent straight to the [logistics app](https://github.com/Reazul-Islam-Fahim/Scan4Resource-logistics-frontend), already logged in |
-| Admin | Overview, Verification (approve corporate buyers and logistics companies), Users (add admins), Payouts, Activity, Account |
+| Admin | Overview, Verification (approve corporate buyers and logistics companies), Users (add admins), Tenders, Payments & payouts, Activity, Account |
 
 `#/signup` creates buyer, seller, corporate buyer and logistics company accounts; the last two wait for an admin
 to verify the company. One account can hold several roles (add them under Account, then switch). Admins are
@@ -49,7 +49,18 @@ created with the backend's `scripts/create_admin.py`, then by other admins. Logg
 Set `VITE_LOGISTICS_URL` (locally `http://localhost:5174`) so logistics companies are sent to the logistics app,
 which in turn sends people here to log in (`#/login?app=logistics&next=...`) and gets the login back.
 
-Tenders and payouts are empty pages in this step; they fill in as delivery and payments are connected.
+### Tenders
+
+- **Corporate buyer** (`#/dashboard/tenders`): writes a tender (materials with quantity, unit and the condition
+  accepted, the delivery site, the closing date for bids, the date needed and a private budget), saves it as a
+  draft or publishes it. Each bid shows the seller's town, the quantities and prices, the cheapest delivery from
+  the seller's logistics partners and the **landed price**, sorted cheapest first; a bar under each material shows
+  how much the bids cover. Tick one or more bids and **Award**: each becomes an order with **Book delivery** and
+  **Pay**, as for marketplace orders.
+- **Seller**: **Tenders** lists open tenders, those matching their listings and near their pickup marked
+  **Invited**. They bid on some or all materials, from stock or from a listing, and can change or withdraw the bid
+  until bidding closes. A won bid shows up in **Orders**.
+- **Admin**: **Tenders** shows every tender with its bids, and can take one down with a reason.
 
 ### Marketplace
 
