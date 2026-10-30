@@ -6,6 +6,7 @@ import { defaultScanName } from './lib/format'
 import { buildReport } from './lib/items'
 import { clearSession, loadSession, mergeDetections, newSession, sessionFromScan, storeSession } from './lib/session'
 import Login from './components/auth/Login'
+import Cart from './components/Cart'
 import Signup from './components/auth/Signup'
 import Dashboard from './components/dashboard/Dashboard'
 import DetectedItems from './components/DetectedItems'
@@ -16,10 +17,11 @@ import { Profile, Reports } from './components/Placeholder'
 import Report from './components/Report'
 import Scanner from './components/Scanner'
 import Scans from './components/Scans'
+import SellFromScan from './components/sell/SellFromScan'
 import Shell from './components/Shell'
 import Upload from './components/Upload'
 
-// Home -> camera (or upload) -> detected items -> reuse report -> marketplace (and the map).
+// Home -> camera (or upload) -> detected items -> reuse report -> sell on the marketplace -> buyers order.
 // One login page for every role (/login), then that role's dashboard (/dashboard).
 
 // What the session keeps of an upload job: its state and links, not the items (those are merged in).
@@ -192,10 +194,12 @@ export default function App() {
               save={save}
               onRetrySave={() => saveNow(session)}
               onBack={() => navigate('/items')}
-              onNext={() => navigate('/market')}
+              onNext={() => navigate(report.isSample ? '/market' : '/sell')}
             />
           }
         />
+        <Route path="sell" element={<SellFromScan report={report} scanId={session.id} title={title} onBack={() => navigate('/report')} />} />
+        <Route path="cart" element={<Cart />} />
         <Route path="market" element={<Market report={report} />} />
         <Route path="map" element={<MapScreen />} />
         <Route path="scans" element={<Scans onScan={startScan} onOpen={openScan} />} />

@@ -38,7 +38,7 @@ dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
 | --- | --- |
 | Buyer | Overview, Orders, Account |
 | Corporate buyer | Overview, Tenders, Orders, Account |
-| Seller | Overview, Listings, Orders, Logistics partners, Balance & payouts, Account |
+| Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Pickup & partners, Balance & payouts, Account |
 | Logistics company | Sent straight to the [logistics app](https://github.com/Reazul-Islam-Fahim/Scan4Resource-logistics-frontend), already logged in |
 | Admin | Overview, Verification (approve corporate buyers and logistics companies), Users (add admins), Payouts, Activity, Account |
 
@@ -49,8 +49,25 @@ created with the backend's `scripts/create_admin.py`, then by other admins. Logg
 Set `VITE_LOGISTICS_URL` (locally `http://localhost:5174`) so logistics companies are sent to the logistics app,
 which in turn sends people here to log in (`#/login?app=logistics&next=...`) and gets the login back.
 
-Orders, listings, tenders and payouts are empty pages in this step; they fill in as the marketplace, delivery
-and payments are connected.
+Tenders and payouts are empty pages in this step; they fill in as delivery and payments are connected.
+
+### Marketplace
+
+With a backend (`VITE_API_URL`) the marketplace and the map show the **published listings** and stay live: the app
+listens to `/market/events`, so a new listing, a price change or a sell-out appears without a reload.
+
+- **Sell:** on a scan report, **Sell on the marketplace** (`#/sell`) turns each item into a listing: title,
+  category, material, condition, quantity and price (the catalog's price is suggested), a pickup address picked
+  from geo.admin.ch suggestions, a pickup window and the logistics partners. Save as drafts or publish. Buyers see
+  the town, never the street.
+- **Buy:** tap a card for the details, choose the quantity and add it to the cart (kept in the browser). The cart
+  (`#/cart`) asks for a Swiss delivery address and places the order, which reserves the materials. Logging in as
+  a buyer or corporate buyer is asked for at that point, and the cart is kept.
+- **Map** (`#/map`): MapLibre with swisstopo's light base map, one point per listing (rounded to about 1 km),
+  clustered until you zoom in, with the category chips, search, canton filter, list view and **near me**.
+  Distances are measured from your location once you allow it, else from Zürich.
+
+Without a backend (demo mode) the marketplace and map show sample listings and cannot be bought from.
 
 ## The flow
 
@@ -62,9 +79,9 @@ and payments are connected.
 | Camera | `#/scan` | **Start scanning** on Home. **Photo**: the shutter takes a photo. **Video**: the shutter starts and stops a recording. The gallery button adds photos or videos from the device, the flip button switches cameras. All of them can be mixed. **Finish** (top right, with the number of captures) uploads them. |
 | Processing | `#/upload` | Uploads the captures with a progress bar, then follows the server: it builds a 3D model, then counts and measures the objects (this takes a few minutes, and the page can be left meanwhile). When it is done, the frames with the counted objects outlined are shown, and **Review items** continues. |
 | Detected items | `#/items` | One row per label with its count. Tap a row to correct quantity, material, condition (doors: width and height) or remove an item. **Generate Reuse Report** saves the scan and continues. With nothing detected, sample items are shown, marked as sample data. |
-| Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. The export icon in the top bar sends the PDF to the phone's share sheet (a download where sharing is not supported). **Downloads** has **Preview** and **Download** for the report PDF (drawn with PDF.js, so the preview also works on phones), the 3D model (`scene.glb`, turned with a finger in a three.js viewer) and the mask images (every frame with the objects outlined; `masks.zip`). The 3D model and mask images come from the server and are only there for an uploaded scan that finished processing. **Find buyers / next steps** opens the marketplace. |
-| Reuse Marketplace | `#/market` | Search, category chips, 2-column cards with a heart (kept in the browser). The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. Scanned materials come first. |
-| Material sources | `#/map` | A map of Switzerland with clustered sources (tap a cluster to zoom in), a details card, type chips, search, a canton filter and a list view. |
+| Reuse Report | `#/report` | Potential for reuse, items detected, CO₂ savings and resale value (both estimates), and the material list with values. The export icon in the top bar sends the PDF to the phone's share sheet (a download where sharing is not supported). **Downloads** has **Preview** and **Download** for the report PDF (drawn with PDF.js, so the preview also works on phones), the 3D model (`scene.glb`, turned with a finger in a three.js viewer) and the mask images (every frame with the objects outlined; `masks.zip`). The 3D model and mask images come from the server and are only there for an uploaded scan that finished processing. **Sell on the marketplace** publishes the items (see Marketplace above). |
+| Reuse Marketplace | `#/market` | Published listings, live. Search, category chips, cards with a heart (kept in the browser), a cart button. The sliders button opens the filters: a **price range** and the **26 Swiss cantons**. A card opens the listing with **Add to cart**. |
+| Material sources | `#/map` | The listings on a real map of Switzerland (MapLibre, swisstopo), clustered, with a details card, category chips, search, a canton filter, a list view and near me. |
 | Scans | `#/scans` | Saved scans. **Open report** reloads one into the report; a scan can be deleted. |
 
 Reports and Profile are placeholders in this version. A scan in progress survives an accidental reload.
@@ -84,8 +101,7 @@ objects use a typical weight, scaled by the scanned size, times the KBOB factor 
 
 **Resale value** is a typical new price times the share a reused item fetches in its condition (good 40%, fair 25%,
 poor 10%, not set 30%). The new prices are rough averages, not market data. All factors are in
-`src/lib/impact.js`. Marketplace listing prices come from `src/lib/materials.js` and are samples. Marketplace
-distances are measured from Zürich.
+`src/lib/impact.js`. The prices suggested when selling come from `src/lib/materials.js`.
 
 ## Photos
 
@@ -164,15 +180,16 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | `src/components/DetectedItems.jsx`, `ItemSheet.jsx` | Label-and-count list and the editor for one label |
 | `src/components/Report.jsx` | Reuse Report, PDF export and the downloads (PDF, 3D model, mask images) |
 | `src/components/Viewer.jsx`, `PdfPreview.jsx`, `ModelPreview.jsx`, `MaskPreview.jsx` | Full-screen previews with Download; PDF.js and three.js load only when a preview opens |
-| `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet |
-| `src/components/MapScreen.jsx` | Map of material sources |
+| `src/components/Market.jsx`, `market/` | Marketplace, cards, filter sheet, listing sheet, the MapLibre map |
+| `src/components/MapScreen.jsx` | Listings on the map |
+| `src/components/sell/`, `Cart.jsx`, `AddressField.jsx` | Publishing a report's items, the cart and order, Swiss address search |
+| `src/hooks/useListings.js`, `useCart.jsx`, `src/lib/marketApi.js`, `geo.js` | Live listings (server-sent events), the cart, marketplace calls, geo.admin.ch and location |
 | `src/components/Scans.jsx` | Saved scans |
-| `src/lib/materials.js` | Material catalog: names, units, sample listing prices |
+| `src/lib/materials.js` | Material catalog: names, units, suggested listing prices |
 | `src/lib/impact.js` | CO₂ savings and resale value per item (KBOB factors, condition) |
 | `src/lib/items.js` | Grouping items by label; report totals; sample report |
-| `src/lib/market.js`, `sites.js`, `swiss.js` | Sample listings and sources, cantons and cities, filters |
+| `src/lib/market.js`, `swiss.js` | Filters, demo-mode sample listings, cantons and cities |
 | `src/lib/pdf.js` | The PDF (`jspdf`, loaded only on export) |
-| `src/lib/swissMap.js` | Generated map paths (swisstopo, via the `swiss-maps` package) |
 | `src/lib/api.js`, `mock.js`, `session.js` | Network calls, demo mode, merging detections |
 | `src/lib/auth.js`, `src/hooks/useAuth.jsx` | Login, sign-up, roles, the stored token, admin calls |
 | `src/components/auth/` | The shared login page with the role picker, and sign-up |

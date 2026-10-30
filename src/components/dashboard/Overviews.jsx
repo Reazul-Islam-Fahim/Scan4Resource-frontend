@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
+import { formatPrice } from '../../lib/format'
+import { fetchMine, fetchOrders, fetchSales } from '../../lib/marketApi'
 import { hasLogisticsApp, logisticsUrl } from '../../lib/auth'
 import { ChevronRight } from '../Icons'
 
@@ -13,7 +16,20 @@ function Greeting({ children }) {
   )
 }
 
-/** Figures that will fill in as orders come in; zero until then. */
+/** Data for the overview figures; '…' while loading, '—' if it failed. */
+function useFigures(load) {
+  const { token } = useAuth()
+  const [data, setData] = useState(undefined)
+  useEffect(() => {
+    load(token).then(setData, () => setData(null))
+  }, [token, load])
+  return (fn) => (data === undefined ? '…' : data === null ? '—' : fn(data))
+}
+
+const openOrders = (orders) => orders.filter((o) => o.status === 'awaiting_delivery').length
+const spent = (orders) => formatPrice(orders.filter((o) => o.status !== 'cancelled').reduce((sum, o) => sum + o.goods_chf, 0))
+
+/** Figures that fill in as orders come in. */
 function Stats({ items }) {
   return (
     <div className="dash-stats">
@@ -41,10 +57,11 @@ function Step({ to, href, title, text }) {
 }
 
 export function BuyerOverview() {
+  const figure = useFigures(fetchOrders)
   return (
     <section className="dash-section">
       <Greeting>Find reclaimed materials near you and have them delivered.</Greeting>
-      <Stats items={[['Open orders', 0], ['Deliveries on the way', 0], ['Spent', 'CHF 0.00']]} />
+      <Stats items={[['Open orders', figure(openOrders)], ['Deliveries on the way', 0], ['Spent', figure(spent)]]} />
       <Step to="/market" title="Browse the marketplace" text="Materials scanned by sellers across Switzerland" />
       <Step to="/map" title="See materials on the map" text="Find what is closest to your site" />
     </section>
@@ -52,21 +69,32 @@ export function BuyerOverview() {
 }
 
 export function CorporateOverview() {
+  const figure = useFigures(fetchOrders)
   return (
     <section className="dash-section">
       <Greeting>Buy in bulk, or let sellers bid on a tender.</Greeting>
-      <Stats items={[['Open tenders', 0], ['Open orders', 0], ['Spent', 'CHF 0.00']]} />
+      <Stats items={[['Open tenders', 0], ['Open orders', figure(openOrders)], ['Spent', figure(spent)]]} />
       <Step to="/dashboard/tenders" title="Tenders" text="Request large quantities for a project" />
       <Step to="/market" title="Browse the marketplace" text="Buy listed materials straight away" />
     </section>
   )
 }
 
+const loadSeller = (token) => Promise.all([fetchMine(token), fetchSales(token)])
+
 export function SellerOverview() {
+  const figure = useFigures(loadSeller)
   return (
     <section className="dash-section">
       <Greeting>Scan a building, publish what can be reused, and get paid when it is delivered.</Greeting>
-      <Stats items={[['Live listings', 0], ['Orders to prepare', 0], ['Available balance', 'CHF 0.00']]} />
+      <Stats
+        items={[
+          ['Live listings', figure(([mine]) => mine.filter((l) => l.status === 'active').length)],
+          ['Orders to prepare', figure(([, sales]) => openOrders(sales))],
+          ['Available balance', 'CHF 0.00'],
+        ]}
+      />
+      <Step to="/dashboard/listings" title="My listings" text="Prices, stock and what is published" />
       <Step to="/scan" title="Start a scan" text="Photos or a video walkthrough of the site" />
       <Step to="/scans" title="My scans" text="Open a report and publish its items" />
       <Step to="/dashboard/partners" title="Choose logistics partners" text="Who may pick up your materials" />
