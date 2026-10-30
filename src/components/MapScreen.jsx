@@ -1,51 +1,27 @@
-import { useMemo, useRef, useState } from 'react'
-import useSize from '../hooks/useSize'
-import { SWISS_MAP, project } from '../lib/swissMap'
-import { DEFAULT_SITE_ID, SITES, SITE_KINDS, filterSites } from '../lib/sites'
-import { ChevronRight, LayersIcon, ListIcon, LocateIcon, MapIcon, PinIcon, SearchIcon, SlidersIcon } from './Icons'
+import { useMemo, useState } from 'react'
+import useListings from '../hooks/useListings'
+import { isMock } from '../lib/api'
+import { formatPrice } from '../lib/format'
+import { SAMPLE_LISTINGS, filterListings, listingsPerCanton } from '../lib/market'
+import { CATEGORIES } from '../lib/materials'
+import { ChevronRight, ListIcon, LocateIcon, MapIcon, PinIcon, SearchIcon, SlidersIcon } from './Icons'
 import FilterSheet from './market/FilterSheet'
+import ListingSheet from './market/ListingSheet'
+import MarketMap from './market/MarketMap'
 import MaterialImage from './MaterialImage'
 
-const { width: W, height: H } = SWISS_MAP
-const RADIUS = 56 // px: markers closer than this join a cluster
-const MAX_SCALE = 6
-const SITE_ART = { site: 'bricks', building: 'concrete', material: 'wood', seller: 'windows' }
-
-// [name, longitude, latitude]
-const NEIGHBOURS = [
-  ['GERMANY', 8.3, 48.05], ['FRANCE', 5.75, 47.05], ['AUSTRIA', 10.9, 47.35], ['ITALY', 8.9, 45.62],
-]
-const CITY_LABELS = [
-  ['Zürich', 8.5417, 47.3769, 6, -6], ['Luzern', 8.3093, 47.0502, 6, 12], ['Bern', 7.4474, 46.948, -4, 14], ['Geneva', 6.1432, 46.2044, 6, 12],
-]
-
-function cluster(points) {
-  const out = []
-  for (const point of points) {
-    const hit = out.find((c) => Math.hypot(c.x - point.x, c.y - point.y) < RADIUS)
-    if (hit) {
-      hit.sites.push(point.site)
-      hit.x = (hit.x * (hit.sites.length - 1) + point.x) / hit.sites.length
-      hit.y = (hit.y * (hit.sites.length - 1) + point.y) / hit.sites.length
-      hit.mx += point.mx
-      hit.my += point.my
-    } else {
-      out.push({ x: point.x, y: point.y, mx: point.mx, my: point.my, sites: [point.site] })
-    }
-  }
-  return out
-}
-
-function SiteCard({ site, onClick, className = '' }) {
+function SiteCard({ listing, onClick, className = '' }) {
   return (
     <button type="button" className={`site-card ${className}`} onClick={onClick}>
-      <MaterialImage kind={SITE_ART[site.kind]} className="site-thumb" />
+      <MaterialImage kind={listing.category} src={listing.image} className="site-thumb" />
       <span className="site-text">
-        <strong>{site.name}</strong>
-        <span>{site.items > 200 ? `~ ${site.items}` : site.items} reusable items</span>
+        <strong>{listing.name}</strong>
+        <span>
+          {formatPrice(listing.price)} / {listing.priceUnit} · {listing.seller}
+        </span>
         <span className="site-where">
           <PinIcon width={15} height={15} />
-          {site.city}, {Math.max(1, Math.round(site.distanceKm))} km
+          {listing.city}, {Math.max(1, Math.round(listing.distanceKm))} km
         </span>
       </span>
       <ChevronRight />
@@ -53,74 +29,41 @@ function SiteCard({ site, onClick, className = '' }) {
   )
 }
 
+/** Where the materials are: every published listing on a real map of Switzerland, kept live. */
 export default function MapScreen() {
-  const [kind, setKind] = useState('all')
+  const live = useListings()
+  const all = isMock ? SAMPLE_LISTINGS : live.listings
+  const [category, setCategory] = useState('all')
   const [query, setQuery] = useState('')
   const [cantons, setCantons] = useState([])
   const [sheet, setSheet] = useState(false)
   const [view, setView] = useState('map')
-  const [selectedId, setSelectedId] = useState(DEFAULT_SITE_ID)
-  const [zoom, setZoom] = useState({ scale: 1, cx: W / 2, cy: H / 2 })
-  const [borders, setBorders] = useState(true)
-  const stageRef = useRef(null)
-  const size = useSize(stageRef)
+  const [selectedId, setSelectedId] = useState(null)
+  const [openId, setOpenId] = useState(null)
+  const [focus, setFocus] = useState(null)
+  const [locError, setLocError] = useState('')
 
-  const sites = useMemo(() => filterSites(SITES, { kind, query, cantons }), [kind, query, cantons])
-  const counts = useMemo(() => {
-    const perCanton = {}
-    for (const site of SITES) perCanton[site.canton] = (perCanton[site.canton] ?? 0) + 1
-    return perCanton
-  }, [])
-  const selected = sites.find((site) => site.id === selectedId) ?? null
-  const nearest = useMemo(
-    () => [...sites].filter((site) => site.id !== selectedId).sort((a, b) => a.distanceKm - b.distanceKm)[0] ?? null,
-    [sites, selectedId],
-  )
+  const listings = useMemo(() => filterListings(all, { category, query, cantons }), [all, category, query, cantons])
+  const counts = useMemo(() => listingsPerCanton(all), [all])
+  const nearest = useMemo(() => [...listings].sort((a, b) => a.distanceKm - b.distanceKm), [listings])
+  const selected = listings.find((l) => l.id === selectedId) ?? null
+  const open = all.find((l) => l.id === openId) ?? null
+  const shown = selected ?? nearest[0] ?? null
 
-  // Map units -> pixels, with the map fitted inside the stage.
-  const f = size.width && size.height ? Math.min(size.width / W, size.height / H) : 0
-  const ox = (size.width - W * f) / 2
-  const oy = (size.height - H * f) / 2
-  const place = (mx, my) => ({
-    x: ox + ((mx - zoom.cx) * zoom.scale + W / 2) * f,
-    y: oy + ((my - zoom.cy) * zoom.scale + H / 2) * f,
-  })
-
-  const { markers, groups } = useMemo(() => {
-    if (!f) return { markers: [], groups: [] }
-    const points = sites.map((site) => {
-      const [mx, my] = project(site.lon, site.lat)
-      return { site, mx, my, ...place(mx, my) }
-    })
-    const visible = points.filter((p) => p.x > -30 && p.y > -30 && p.x < size.width + 30 && p.y < size.height + 30)
-    const lone = visible.filter((p) => p.site.id === selectedId)
-    const rest = cluster(visible.filter((p) => p.site.id !== selectedId))
-    return { markers: lone, groups: rest }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sites, selectedId, zoom, size.width, size.height, f])
-
-  const focus = (site, scale = 3) => {
-    const [mx, my] = project(site.lon, site.lat)
-    setSelectedId(site.id)
-    setZoom({ scale, cx: mx, cy: my })
+  const pick = (listing) => {
+    setSelectedId(listing.id)
+    setFocus({ lat: listing.lat, lon: listing.lon, zoom: 12 })
     setView('map')
   }
-  const zoomInto = (group) =>
-    setZoom((z) => ({
-      scale: Math.min(MAX_SCALE, z.scale * 2.2),
-      cx: group.mx / group.sites.length,
-      cy: group.my / group.sites.length,
-    }))
-  const reset = () => setZoom({ scale: 1, cx: W / 2, cy: H / 2 })
-
-  const activeFilters = cantons.length > 0 ? 1 : 0
-  const popup = selected && markers[0] ? markers[0] : null
-  const above = popup ? popup.y > 130 : true
-  const cardW = Math.min(300, Math.max(0, size.width - 16))
-  const popupLeft = popup ? Math.min(Math.max(popup.x, cardW / 2 + 8), size.width - cardW / 2 - 8) : 0
-
-  const tx = W / 2 - zoom.cx * zoom.scale
-  const ty = H / 2 - zoom.cy * zoom.scale
+  const locateMe = async () => {
+    setLocError('')
+    try {
+      const place = await live.locateMe()
+      setFocus({ lat: place.lat, lon: place.lon, zoom: 10 })
+    } catch (err) {
+      setLocError(err.message)
+    }
+  }
 
   return (
     <section className="map-page">
@@ -129,113 +72,65 @@ export default function MapScreen() {
         <button type="button" className="icon-btn icon-btn-light" onClick={() => setView((v) => (v === 'map' ? 'list' : 'map'))} aria-label={view === 'map' ? 'Show as list' : 'Show on map'}>
           {view === 'map' ? <ListIcon /> : <MapIcon />}
         </button>
-        <p className="lede">Find reusable building materials near you.</p>
+        <p className="lede">Reusable building materials for sale near you, updated live.</p>
       </header>
 
       <div className="searchrow">
         <label className="search">
           <SearchIcon />
-          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search location, material or project" aria-label="Search material sources" />
+          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search material, town or seller" aria-label="Search listings" />
         </label>
-        <button type="button" className="icon-btn icon-btn-light filter-btn" onClick={() => setSheet(true)} aria-label={activeFilters ? 'Filters, 1 active' : 'Filters'}>
+        <button type="button" className="icon-btn icon-btn-light filter-btn" onClick={() => setSheet(true)} aria-label={cantons.length ? 'Filters, 1 active' : 'Filters'}>
           <SlidersIcon />
-          {activeFilters > 0 && <span className="filter-badge">{activeFilters}</span>}
+          {cantons.length > 0 && <span className="filter-badge">1</span>}
         </button>
       </div>
 
-      <div className="chips" role="tablist" aria-label="Source types">
-        {SITE_KINDS.map(([key, label]) => (
-          <button key={key} type="button" role="tab" aria-selected={kind === key} className="chip-btn" onClick={() => setKind(key)}>
+      <div className="chips" role="tablist" aria-label="Categories">
+        {CATEGORIES.map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={category === key} className="chip-btn" onClick={() => setCategory(key)}>
             {label}
           </button>
         ))}
       </div>
 
+      {isMock && <p className="sample-note">Demo mode: sample listings.</p>}
+      {live.status === 'error' && !isMock && (
+        <p className="error" role="alert">
+          The listings could not be loaded. {live.error}{' '}
+          <button type="button" className="text-btn" onClick={live.reload}>
+            Try again
+          </button>
+        </p>
+      )}
+      {locError && <p className="error">{locError}</p>}
+
       {view === 'list' && (
         <div className="site-list">
-          {sites.length === 0 && <p className="lede">No sources match. Try a different search or clear the location filter.</p>}
-          {[...sites].sort((a, b) => a.distanceKm - b.distanceKm).map((site) => (
-            <SiteCard key={site.id} site={site} onClick={() => focus(site)} />
+          {listings.length === 0 && <p className="lede">No listings match. Try a different search or clear the filters.</p>}
+          {nearest.map((listing) => (
+            <SiteCard key={listing.id} listing={listing} onClick={() => pick(listing)} />
           ))}
         </div>
       )}
 
-      {/* Stays mounted while the list is shown, so its size keeps being tracked. */}
-      <div className="map-stage" ref={stageRef} hidden={view !== 'map'}>
-          <svg className="map-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Map of Switzerland">
-            <g className="map-g" style={{ transform: `translate(${tx}px, ${ty}px) scale(${zoom.scale})` }}>
-              <path className="map-land" d={SWISS_MAP.outline} />
-              {borders && <path className="map-borders" d={SWISS_MAP.borders} />}
-              <path className="map-lakes" d={SWISS_MAP.lakes} />
-              <path className="map-outline" d={SWISS_MAP.outline} />
-              {NEIGHBOURS.map(([name, lon, lat]) => {
-                const [x, y] = project(lon, lat)
-                return (
-                  <text key={name} className="map-country" x={x} y={y} textAnchor="middle" style={{ fontSize: 9 / Math.sqrt(zoom.scale) }}>
-                    {name}
-                  </text>
-                )
-              })}
-              <text className="map-country map-country-ch" x={project(8.1, 46.55)[0]} y={project(8.1, 46.55)[1]} textAnchor="middle" style={{ fontSize: 10 / Math.sqrt(zoom.scale) }}>
-                SWITZERLAND
-              </text>
-              {CITY_LABELS.map(([name, lon, lat, dx, dy]) => {
-                const [x, y] = project(lon, lat)
-                return (
-                  <text key={name} className="map-city" x={x + dx / zoom.scale} y={y + dy / zoom.scale} style={{ fontSize: 8.5 / zoom.scale }}>
-                    {name}
-                  </text>
-                )
-              })}
-            </g>
-          </svg>
-
-          {groups.map((group, i) =>
-            group.sites.length === 1 ? (
-              <button key={group.sites[0].id} type="button" className="pin" style={{ left: group.x, top: group.y }} onClick={() => setSelectedId(group.sites[0].id)} aria-label={`${group.sites[0].name}, ${group.sites[0].city}`} />
-            ) : (
-              <button
-                key={`c${i}-${Math.round(group.x)}-${Math.round(group.y)}`}
-                type="button"
-                className={`cluster${group.sites.length >= 20 ? ' cluster-l' : group.sites.length >= 10 ? ' cluster-m' : ''}`}
-                style={{ left: group.x, top: group.y }}
-                onClick={() => zoomInto(group)}
-                aria-label={`${group.sites.length} sources here. Zoom in`}
-              >
-                {group.sites.length}
-              </button>
-            ),
-          )}
-          {markers.map((m) => (
-            <button key={m.site.id} type="button" className="pin pin-selected" style={{ left: m.x, top: m.y }} aria-label={`${m.site.name}, selected`} />
-          ))}
-
-          {popup && (
-            <div
-              className={`map-popup${above ? '' : ' below'}`}
-              style={{ left: popupLeft, top: above ? popup.y - 18 : popup.y + 18, width: cardW }}
-            >
-              <SiteCard site={popup.site} onClick={() => focus(popup.site, Math.max(zoom.scale, 3))} />
-            </div>
-          )}
-
-          <div className="map-fabs">
-            <button type="button" className="fab" onClick={reset} aria-label="Show all of Switzerland">
-              <LocateIcon />
-            </button>
-            <button type="button" className={`fab${borders ? '' : ' is-off'}`} onClick={() => setBorders((v) => !v)} aria-pressed={borders} aria-label="Toggle canton borders">
-              <LayersIcon />
-            </button>
+      {/* Stays mounted while the list is shown, so the map keeps its position. */}
+      <div className="map-stage" hidden={view !== 'map'}>
+        <MarketMap listings={listings} selectedId={selectedId} onSelect={setSelectedId} focus={focus} />
+        <div className="map-fabs">
+          <button type="button" className="fab" onClick={locateMe} aria-label="Show listings near me">
+            <LocateIcon />
+          </button>
+        </div>
+        {listings.length === 0 && live.status !== 'loading' && <p className="map-empty">No listings match. Try a different search or filter.</p>}
+        {shown && (
+          <div className="map-bottom">
+            <SiteCard listing={shown} onClick={() => setOpenId(shown.id)} />
           </div>
-
-          {sites.length === 0 && <p className="map-empty">No sources match. Try a different search or filter.</p>}
-
-          {nearest && (
-            <div className="map-bottom">
-              <SiteCard site={nearest} onClick={() => focus(nearest)} />
-            </div>
-          )}
+        )}
       </div>
+
+      {open && <ListingSheet listing={open} demo={isMock} onClose={() => setOpenId(null)} />}
 
       {sheet && (
         <FilterSheet
@@ -243,8 +138,8 @@ export default function MapScreen() {
           bounds={{ min: 0, max: 10 }}
           initial={{ price: null, cantons }}
           counts={counts}
-          countFor={(draft) => filterSites(SITES, { kind, query, cantons: draft.cantons }).length}
-          noun="source"
+          countFor={(draft) => filterListings(all, { category, query, cantons: draft.cantons }).length}
+          noun="listing"
           onApply={(next) => {
             setCantons(next.cantons)
             setSheet(false)

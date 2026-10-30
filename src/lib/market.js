@@ -1,7 +1,7 @@
 import { CATALOG, catalogFor } from './materials'
 import { cityInfo, distanceKm } from './swiss'
 
-// Listings of the sample marketplace. The first six follow the design; the rest are other sellers,
+// Listings of the sample marketplace, shown only in demo mode (no backend configured). The first six follow the design; the rest are other sellers,
 // so that search and filters have something to work on.
 const seed = (id, key, category, name, sub, city, price, priceUnit, seller) => ({
   id, key, category, name, sub, city, price, priceUnit, seller,
@@ -35,6 +35,8 @@ function withPlace(listing) {
     fromScan: false,
     ...listing,
     canton: place.canton,
+    lat: place.lat,
+    lon: place.lon,
     distanceKm: distanceKm(place.lat, place.lon),
   }
 }

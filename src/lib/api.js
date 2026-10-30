@@ -1,7 +1,7 @@
 import { mockDelete, mockGetJob, mockList, mockSave, mockUpload } from './mock'
 import { catalogFor, resolveLabel } from './materials'
 
-const BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+export const BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
 
 // Demo mode when no backend URL is configured, or when forced.
 export const isMock = import.meta.env.VITE_USE_MOCK === 'true' || BASE === ''

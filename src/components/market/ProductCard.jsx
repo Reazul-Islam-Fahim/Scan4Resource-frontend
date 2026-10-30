@@ -2,7 +2,7 @@ import { formatPrice } from '../../lib/format'
 import { HeartIcon, PinIcon } from '../Icons'
 import MaterialImage from '../MaterialImage'
 
-export default function ProductCard({ listing, favourite, onToggle }) {
+export default function ProductCard({ listing, favourite, onToggle, onOpen }) {
   return (
     <article className="product">
       <div className="product-media">
@@ -18,7 +18,11 @@ export default function ProductCard({ listing, favourite, onToggle }) {
         </button>
       </div>
       <div className="product-body">
-        <h3>{listing.name}</h3>
+        <h3>
+          <button type="button" className="product-open" onClick={onOpen}>
+            {listing.name}
+          </button>
+        </h3>
         <p className="product-sub">{listing.sub}</p>
         <p className="product-where">
           <PinIcon width={15} height={15} />
