@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
-import { formatPrice } from '../../lib/format'
+import { formatMoney, formatPrice } from '../../lib/format'
+import { fetchEarnings } from '../../lib/financeApi'
 import { fetchMine, fetchOrders, fetchSales } from '../../lib/marketApi'
 import { hasLogisticsApp, logisticsUrl } from '../../lib/auth'
 import { ChevronRight } from '../Icons'
@@ -81,7 +82,7 @@ export function CorporateOverview() {
   )
 }
 
-const loadSeller = (token) => Promise.all([fetchMine(token), fetchSales(token)])
+const loadSeller = (token) => Promise.all([fetchMine(token), fetchSales(token), fetchEarnings(token)])
 
 export function SellerOverview() {
   const figure = useFigures(loadSeller)
@@ -92,13 +93,14 @@ export function SellerOverview() {
         items={[
           ['Live listings', figure(([mine]) => mine.filter((l) => l.status === 'active').length)],
           ['Orders to prepare', figure(([, sales]) => openOrders(sales))],
-          ['Available balance', 'CHF 0.00'],
+          ['Available balance', figure(([, , earnings]) => formatMoney(earnings.available_chf))],
         ]}
       />
       <Step to="/dashboard/listings" title="My listings" text="Prices, stock and what is published" />
       <Step to="/scan" title="Start a scan" text="Photos or a video walkthrough of the site" />
       <Step to="/scans" title="My scans" text="Open a report and publish its items" />
       <Step to="/dashboard/partners" title="Choose logistics partners" text="Who may pick up your materials" />
+      <Step to="/dashboard/payouts" title="Balance & payouts" text="What you earned and payouts to your bank" />
     </section>
   )
 }
