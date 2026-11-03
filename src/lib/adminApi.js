@@ -19,3 +19,7 @@ export const cancelAdminOrder = (token, orderId, reason) =>
   request(`/admin/orders/${encodeURIComponent(orderId)}/cancel`, send('POST', { reason }, token), 20000)
 export const fetchLedger = (token) => request('/admin/ledger', authed(token))
 export const fetchAnalytics = (token) => request('/admin/analytics', authed(token))
+export const fetchLogs = (token, filters = {}) => {
+  const params = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== '' && v != null))
+  return request(`/admin/logs?${params}`, authed(token), 20000)
+}

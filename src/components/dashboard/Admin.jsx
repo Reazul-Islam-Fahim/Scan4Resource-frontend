@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
-import { adminActions, adminCreateUser, adminDecide, adminUsers, roleName } from '../../lib/auth'
+import { adminCreateUser, adminDecide, adminUsers, roleName } from '../../lib/auth'
 import { formatDate } from './format'
 
 function useAdminData(load) {
@@ -175,42 +175,6 @@ export function AdminUsers() {
           Add account
         </button>
       </form>
-    </section>
-  )
-}
-
-export function AdminActivity() {
-  const { data, error } = useAdminData(adminActions)
-  return (
-    <section className="dash-section">
-      <h1 className="dash-title">Activity</h1>
-      <p className="lede">Every admin action is recorded here.</p>
-      {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No admin actions yet.</p>}
-      {data && data.length > 0 && (
-        <div className="dash-card table-wrap">
-          <table className="dash-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((a) => (
-                <tr key={a.id}>
-                  <td>{formatDate(a.at, true)}</td>
-                  <td>{a.action}</td>
-                  <td className="mono">{a.target}</td>
-                  <td>{a.detail}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </section>
   )
 }

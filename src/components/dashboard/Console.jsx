@@ -212,7 +212,7 @@ export function AdminOrders() {
             (open === order.id ? (
               <div className="cancel-box">
                 <label className="field">
-                  <span className="field-label">Reason (kept in the activity log)</span>
+                  <span className="field-label">Reason (kept in the logs)</span>
                   <input className="input" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
                 </label>
                 <p className="note">
@@ -268,7 +268,7 @@ export function AdminListings() {
     <section className="dash-section">
       <header>
         <h1 className="dash-title">Listings</h1>
-        <p className="lede">Every listing, drafts included. Withdraw one that breaks the rules; it is logged in the activity log.</p>
+        <p className="lede">Every listing, drafts included. Withdraw one that breaks the rules; it is recorded in the logs.</p>
       </header>
       <StatusChips labels={LISTING_STATUS} value={status} onChange={setStatus} />
       {(error || failure) && <p className="error">{error || failure}</p>}
