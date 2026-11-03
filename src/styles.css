@@ -3234,3 +3234,156 @@ a.btn {
   padding-bottom: 6px;
   font-size: 12.5px;
 }
+
+/* ---- admin logs ------------------------------------------------------------------------------- */
+.warn-box {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #f1e0b5;
+  border-radius: 14px;
+  background: #fdf8ea;
+  color: #6b5310;
+}
+
+.log-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.log-search {
+  grid-column: 1 / -1;
+}
+
+.log-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 46px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.log-list {
+  margin: 0;
+  padding: 14px 18px;
+  list-style: none;
+}
+
+.log-line {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.log-line:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.log-line.log-warning {
+  box-shadow: inset 3px 0 0 #e2b33b;
+  padding-left: 10px;
+}
+
+.log-line.log-error {
+  box-shadow: inset 3px 0 0 var(--alert);
+  padding-left: 10px;
+}
+
+.log-main {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.log-time {
+  color: var(--graphite);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+
+.log-what {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.log-detail {
+  color: var(--graphite);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.log-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.log-who {
+  margin: 4px 0 0 162px;
+  overflow-wrap: anywhere;
+}
+
+.log-who .text-btn {
+  padding: 0;
+  font-size: inherit;
+}
+
+.log-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 8px 0 0 162px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--page);
+  font-size: 13px;
+}
+
+.log-facts dt {
+  color: var(--graphite);
+}
+
+.log-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .log-main {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .log-time {
+    grid-column: 1 / -1;
+  }
+
+  .log-who,
+  .log-facts {
+    margin-left: 0;
+  }
+}

@@ -1,6 +1,7 @@
 import { BagIcon, BuildingIcon, ClockIcon, DocIcon, GridIcon, ListIcon, ShopIcon, SlidersIcon, TruckIcon, UserIcon, UsersIcon, WalletIcon, ShieldIcon } from '../Icons'
 import { AccountPage } from './Account'
-import { AdminActivity, AdminUsers, AdminVerification } from './Admin'
+import { AdminUsers, AdminVerification } from './Admin'
+import { AdminLogs } from './Logs'
 import { AdminCommission, AdminInsights, AdminLedger, AdminListings, AdminOrders } from './Console'
 import { BuyerOverview, CorporateOverview, LogisticsOverview, SellerOverview } from './Overviews'
 import { AdminPayouts, SellerEarnings } from './Finance'
@@ -45,7 +46,7 @@ export const DASHBOARDS = {
     { path: 'payouts', label: 'Payments & payouts', icon: WalletIcon, element: <AdminPayouts /> },
     { path: 'ledger', label: 'Ledger', icon: ListIcon, element: <AdminLedger /> },
     { path: 'commission', label: 'Commission', icon: SlidersIcon, element: <AdminCommission /> },
-    { path: 'activity', label: 'Activity', icon: ClockIcon, element: <AdminActivity /> },
+    { path: 'logs', label: 'Logs', icon: ClockIcon, element: <AdminLogs /> },
     account,
   ],
 }
