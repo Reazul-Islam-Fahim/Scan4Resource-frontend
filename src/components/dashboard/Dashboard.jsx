@@ -5,6 +5,8 @@ import { LogoutIcon } from '../Icons'
 import { DASHBOARDS, ROLE_ICONS } from './roles'
 
 /** Every role's dashboard: a sidebar on wide screens, a bottom tab bar on phones, the role's pages inside. */
+const TABS_THAT_FIT = 7
+
 export default function Dashboard() {
   const auth = useAuth()
   const navigate = useNavigate()
@@ -62,9 +64,18 @@ export default function Dashboard() {
       </main>
 
       <nav className="tabbar dash-tabs" aria-label="Dashboard">
-        <div className="tabbar-inner" style={{ gridTemplateColumns: `repeat(${pages.length}, 1fr)` }}>
+        <div
+          className={`tabbar-inner${pages.length > TABS_THAT_FIT ? ' is-scrolling' : ''}`}
+          style={{ gridTemplateColumns: pages.length > TABS_THAT_FIT ? `repeat(${pages.length}, 72px)` : `repeat(${pages.length}, 1fr)` }}
+        >
           {pages.map(({ path, label, icon: Icon }) => (
-            <NavLink key={path} to={`/dashboard/${path}`} end className={({ isActive }) => `tab${isActive ? ' is-active' : ''}`}>
+            <NavLink
+              key={path}
+              to={`/dashboard/${path}`}
+              end
+              ref={(el) => el?.classList.contains('is-active') && el.scrollIntoView({ block: 'nearest', inline: 'nearest' })}
+              className={({ isActive }) => `tab${isActive ? ' is-active' : ''}`}
+            >
               <Icon />
               {label.split(' ')[0]}
             </NavLink>

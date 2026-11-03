@@ -36,12 +36,12 @@ function useLoad(load) {
   return { ...state, reload, token }
 }
 
-const LISTING_STATUS = { draft: 'Draft', active: 'Published', sold: 'Sold out', withdrawn: 'Withdrawn' }
-const ORDER_STATUS = { awaiting_delivery: 'Delivery not booked yet', delivery_booked: 'Delivery booked', delivered: 'Delivered', cancelled: 'Cancelled' }
+export const LISTING_STATUS = { draft: 'Draft', active: 'Published', sold: 'Sold out', withdrawn: 'Withdrawn' }
+export const ORDER_STATUS = { awaiting_delivery: 'Delivery not booked yet', delivery_booked: 'Delivery booked', delivered: 'Delivered', cancelled: 'Cancelled' }
 const needsAction = (order) => order.status === 'awaiting_delivery' || (order.status !== 'cancelled' && order.payment?.status !== 'paid')
 const qty = (q, unit) => (unit === 'm2' ? `${q} m²` : `${q}×`)
 
-function Pill({ status, labels }) {
+export function Pill({ status, labels }) {
   const tone = ['active', 'delivery_booked', 'delivered'].includes(status) ? '' : status === 'draft' || status === 'awaiting_delivery' ? ' status-pending' : ' status-rejected'
   return <span className={`status-pill${tone}`}>{labels[status] ?? status}</span>
 }
@@ -147,13 +147,14 @@ export function SellerListings() {
   )
 }
 
-function OrderCard({ order, children, showBuyer }) {
+export function OrderCard({ order, children, showBuyer, full }) {
   return (
     <article className="dash-card order-card">
       <div className="verify-head">
         <strong>Order of {formatDate(order.created_at, true)}</strong>
         <span className="pill-row">
           {(order.payment?.status === 'paid' || order.paid) && <span className="status-pill">Paid</span>}
+          {order.payment?.status === 'refunded' && <span className="status-pill status-pending">Refunded</span>}
           <Pill status={order.status} labels={ORDER_STATUS} />
         </span>
       </div>
@@ -174,7 +175,7 @@ function OrderCard({ order, children, showBuyer }) {
           </li>
         ))}
       </ul>
-      {!showBuyer && order.deliveries?.length > 0 ? (
+      {(full || !showBuyer) && order.deliveries?.length > 0 ? (
         <>
           <p className="order-pay note">
             <span>Materials</span>
