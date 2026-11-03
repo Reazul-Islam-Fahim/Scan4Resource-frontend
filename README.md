@@ -6,6 +6,9 @@ PDF), and shows the materials in a sample **Reuse Marketplace** that can be filt
 
 ## Run it
 
+To run the whole platform (both APIs and both apps) with one command, see
+[RUNNING.md in the backend](https://github.com/Reazul-Islam-Fahim/Scan4Resource-backend/blob/logistics/RUNNING.md).
+
 ```bash
 npm install
 npm run dev
@@ -40,7 +43,7 @@ dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
 | Corporate buyer | Overview, Tenders, Orders, Account |
 | Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Tenders, Pickup & partners, Balance & payouts, Account |
 | Logistics company | Sent straight to the [logistics app](https://github.com/Reazul-Islam-Fahim/Scan4Resource-logistics-frontend), already logged in |
-| Admin | Overview, Verification (approve corporate buyers and logistics companies), Users (add admins), Tenders, Payments & payouts, Activity, Account |
+| Admin | Overview (sales, commission, orders, CO₂ saved, users, last six months), Verification (approve corporate buyers and logistics companies), Users (add admins), Listings (withdraw), Orders (cancel and refund before pickup), Tenders, Payments & payouts, Ledger (every credit and payout), Commission (rates with history), Activity, Account |
 
 `#/signup` creates buyer, seller, corporate buyer and logistics company accounts; the last two wait for an admin
 to verify the company. One account can hold several roles (add them under Account, then switch). Admins are

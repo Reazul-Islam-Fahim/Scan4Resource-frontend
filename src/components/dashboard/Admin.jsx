@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
 import { adminActions, adminCreateUser, adminDecide, adminUsers, roleName } from '../../lib/auth'
-import { fetchFinance } from '../../lib/financeApi'
-import { formatMoney } from '../../lib/format'
 import { formatDate } from './format'
 
 function useAdminData(load) {
@@ -19,40 +17,7 @@ function useAdminData(load) {
 }
 
 const loadUsers = (token) => adminUsers(token)
-const loadOverview = (token) => Promise.all([adminUsers(token), fetchFinance(token)])
 const loadPending = (token) => adminUsers(token, { status: 'pending' })
-
-export function AdminOverview() {
-  const { data: both, error } = useAdminData(loadOverview)
-  const [data, finance] = both ?? [null, null]
-  const count = (fn) => (data ? data.filter(fn).length : '…')
-  const holds = (role) => (u) => u.roles.some((r) => r.role === role && r.status === 'active')
-  return (
-    <section className="dash-section">
-      <header>
-        <h1 className="dash-title">Platform overview</h1>
-        <p className="lede">Scan4Reuse keeps 10% from each sale and 10% from each delivery.</p>
-      </header>
-      {error && <p className="error">{error}</p>}
-      <div className="dash-stats">
-        {[
-          ['Waiting for verification', count((u) => u.roles.some((r) => r.status === 'pending'))],
-          ['Buyers', count(holds('buyer'))],
-          ['Corporate buyers', count(holds('corporate'))],
-          ['Sellers', count(holds('seller'))],
-          ['Logistics companies', count(holds('logistics'))],
-          ['Commission earned', finance ? formatMoney(finance.commission_chf) : '…'],
-          ['Payouts to approve', finance ? finance.payouts_requested : '…'],
-        ].map(([label, value]) => (
-          <div key={label} className="dash-card dash-stat">
-            <span className="note">{label}</span>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
 
 export function AdminVerification() {
   const { data, error, reload, token } = useAdminData(loadPending)
