@@ -2258,6 +2258,10 @@ button:disabled {
   gap: 16px;
 }
 
+.dash-section > * {
+  min-width: 0; /* a wide table scrolls inside its card instead of widening the page */
+}
+
 .dash-title {
   margin: 0;
   font-size: clamp(26px, 6vw, 32px);
@@ -2334,6 +2338,16 @@ button:disabled {
 
 .dash-tabs .tab {
   font-size: 11px;
+}
+
+/* more pages than fit (the admin's): the tab bar scrolls sideways */
+.dash-tabs .tabbar-inner.is-scrolling {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dash-tabs .tabbar-inner.is-scrolling::-webkit-scrollbar {
+  display: none;
 }
 
 .role-row {
@@ -2915,4 +2929,461 @@ a.btn {
 
 .cart-group .section-title {
   margin-top: 0;
+}
+
+/* ---- balance, payouts and payments ---- */
+.dash-table.ledger .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dash-stat .note {
+  font-size: 12.5px;
+}
+
+.plain-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.note.block {
+  display: block;
+}
+
+.order-pay {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+
+.pill-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---- tenders ---- */
+.tender-row {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tender-row > span {
+  width: 100%;
+}
+
+.tender-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+}
+
+.tender-lines {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tender-lines li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.tender-lines li > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tender-qty {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cover {
+  display: block;
+  width: 90px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.cover > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+
+.tender-line-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.tender-line-edit .field {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.tender-line-edit .field.grow {
+  flex: 2 1 220px;
+}
+
+.tender-line-edit .field.narrow {
+  flex: 0 1 120px;
+}
+
+.tender-line-edit .text-btn {
+  align-self: center;
+}
+
+.bid-line-title {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  float: left;
+}
+
+.row-actions.start {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.back-link {
+  justify-self: start;
+}
+
+.bid-card {
+  display: grid;
+  gap: 10px;
+}
+
+.bid-card.is-selected {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green);
+}
+
+.bid-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.bid-pick input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--green);
+}
+
+.order-lines.plain li {
+  grid-template-columns: 1fr auto;
+}
+
+.award-bar {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.award-bar > span {
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 760px) {
+  .award-bar {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.bid-card .order-pay > span:last-child {
+  white-space: nowrap;
+}
+
+/* ---- admin console ---------------------------------------------------------------------------- */
+.dash-chips {
+  margin: 0;
+  padding: 2px 0 6px;
+}
+
+.btn-danger {
+  background: var(--alert);
+  color: #fff;
+  border: 1px solid var(--alert);
+}
+
+.cancel-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #f0d3d0;
+  border-radius: 14px;
+  background: #fdf6f5;
+}
+
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.console-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.month-chart {
+  display: grid;
+  gap: 8px;
+}
+
+.month-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.month-readout strong {
+  font-size: 22px;
+  font-weight: 750;
+}
+
+.month-bars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  height: 170px;
+  border-bottom: 1px solid var(--line);
+}
+
+.month-col {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--graphite);
+  font: inherit;
+  cursor: pointer;
+}
+
+.month-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.month-col:hover .month-track,
+.month-col[aria-pressed='true'] .month-track {
+  background: var(--chip);
+}
+
+.month-bar {
+  width: min(36px, 70%);
+  border-radius: 4px 4px 0 0;
+  background: var(--mint-line);
+}
+
+.month-col[aria-pressed='true'] .month-bar {
+  background: var(--green);
+}
+
+.month-name {
+  padding-bottom: 6px;
+  font-size: 12.5px;
+}
+
+/* ---- admin logs ------------------------------------------------------------------------------- */
+.warn-box {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #f1e0b5;
+  border-radius: 14px;
+  background: #fdf8ea;
+  color: #6b5310;
+}
+
+.log-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.log-search {
+  grid-column: 1 / -1;
+}
+
+.log-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 46px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.log-list {
+  margin: 0;
+  padding: 14px 18px;
+  list-style: none;
+}
+
+.log-line {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.log-line:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.log-line.log-warning {
+  box-shadow: inset 3px 0 0 #e2b33b;
+  padding-left: 10px;
+}
+
+.log-line.log-error {
+  box-shadow: inset 3px 0 0 var(--alert);
+  padding-left: 10px;
+}
+
+.log-main {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.log-time {
+  color: var(--graphite);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+
+.log-what {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.log-detail {
+  color: var(--graphite);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.log-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.log-who {
+  margin: 4px 0 0 162px;
+  overflow-wrap: anywhere;
+}
+
+.log-who .text-btn {
+  padding: 0;
+  font-size: inherit;
+}
+
+.log-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 8px 0 0 162px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--page);
+  font-size: 13px;
+}
+
+.log-facts dt {
+  color: var(--graphite);
+}
+
+.log-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .log-main {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .log-time {
+    grid-column: 1 / -1;
+  }
+
+  .log-who,
+  .log-facts {
+    margin-left: 0;
+  }
 }

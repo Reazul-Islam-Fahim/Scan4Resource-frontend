@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
-import { formatPrice } from '../../lib/format'
+import { formatMoney, formatPrice } from '../../lib/format'
+import { fetchEarnings } from '../../lib/financeApi'
 import { fetchMine, fetchOrders, fetchSales } from '../../lib/marketApi'
+import { fetchMyTenders, fetchOpenTenders } from '../../lib/tenderApi'
 import { hasLogisticsApp, logisticsUrl } from '../../lib/auth'
 import { ChevronRight } from '../Icons'
 
@@ -26,7 +28,8 @@ function useFigures(load) {
   return (fn) => (data === undefined ? '…' : data === null ? '—' : fn(data))
 }
 
-const openOrders = (orders) => orders.filter((o) => o.status === 'awaiting_delivery').length
+const openOrders = (orders) => orders.filter((o) => o.status === 'awaiting_delivery' || o.status === 'delivery_booked').length
+const onTheWay = (orders) => orders.filter((o) => o.status === 'delivery_booked').length
 const spent = (orders) => formatPrice(orders.filter((o) => o.status !== 'cancelled').reduce((sum, o) => sum + o.goods_chf, 0))
 
 /** Figures that fill in as orders come in. */
@@ -61,26 +64,35 @@ export function BuyerOverview() {
   return (
     <section className="dash-section">
       <Greeting>Find reclaimed materials near you and have them delivered.</Greeting>
-      <Stats items={[['Open orders', figure(openOrders)], ['Deliveries on the way', 0], ['Spent', figure(spent)]]} />
+      <Stats items={[['Open orders', figure(openOrders)], ['Deliveries booked', figure(onTheWay)], ['Spent', figure(spent)]]} />
       <Step to="/market" title="Browse the marketplace" text="Materials scanned by sellers across Switzerland" />
       <Step to="/map" title="See materials on the map" text="Find what is closest to your site" />
     </section>
   )
 }
 
+const loadCorporate = (token) => Promise.all([fetchOrders(token), fetchMyTenders(token)])
+const liveTenders = (tenders) => tenders.filter((t) => t.status === 'open' || t.status === 'closed').length
+
 export function CorporateOverview() {
-  const figure = useFigures(fetchOrders)
+  const figure = useFigures(loadCorporate)
   return (
     <section className="dash-section">
       <Greeting>Buy in bulk, or let sellers bid on a tender.</Greeting>
-      <Stats items={[['Open tenders', 0], ['Open orders', figure(openOrders)], ['Spent', figure(spent)]]} />
+      <Stats
+        items={[
+          ['Open tenders', figure(([, tenders]) => liveTenders(tenders))],
+          ['Open orders', figure(([orders]) => openOrders(orders))],
+          ['Spent', figure(([orders]) => spent(orders))],
+        ]}
+      />
       <Step to="/dashboard/tenders" title="Tenders" text="Request large quantities for a project" />
       <Step to="/market" title="Browse the marketplace" text="Buy listed materials straight away" />
     </section>
   )
 }
 
-const loadSeller = (token) => Promise.all([fetchMine(token), fetchSales(token)])
+const loadSeller = (token) => Promise.all([fetchMine(token), fetchSales(token), fetchEarnings(token), fetchOpenTenders(token)])
 
 export function SellerOverview() {
   const figure = useFigures(loadSeller)
@@ -91,13 +103,22 @@ export function SellerOverview() {
         items={[
           ['Live listings', figure(([mine]) => mine.filter((l) => l.status === 'active').length)],
           ['Orders to prepare', figure(([, sales]) => openOrders(sales))],
-          ['Available balance', 'CHF 0.00'],
+          ['Available balance', figure(([, , earnings]) => formatMoney(earnings.available_chf))],
         ]}
       />
       <Step to="/dashboard/listings" title="My listings" text="Prices, stock and what is published" />
+      <Step
+        to="/dashboard/tenders"
+        title="Tenders"
+        text={figure(([, , , tenders]) => {
+          const invited = tenders.filter((t) => t.status === 'open' && t.invited && !t.my_bid).length
+          return invited ? `${invited} tender${invited > 1 ? 's' : ''} invite${invited > 1 ? '' : 's'} you to bid` : 'Bid on bulk requests from companies'
+        })}
+      />
       <Step to="/scan" title="Start a scan" text="Photos or a video walkthrough of the site" />
       <Step to="/scans" title="My scans" text="Open a report and publish its items" />
       <Step to="/dashboard/partners" title="Choose logistics partners" text="Who may pick up your materials" />
+      <Step to="/dashboard/payouts" title="Balance & payouts" text="What you earned and payouts to your bank" />
     </section>
   )
 }

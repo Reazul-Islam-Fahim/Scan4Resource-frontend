@@ -6,6 +6,9 @@ PDF), and shows the materials in a sample **Reuse Marketplace** that can be filt
 
 ## Run it
 
+To run the whole platform (both APIs and both apps) with one command, see
+[RUNNING.md in the backend](https://github.com/Reazul-Islam-Fahim/Scan4Resource-backend/blob/logistics/RUNNING.md).
+
 ```bash
 npm install
 npm run dev
@@ -38,9 +41,9 @@ dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
 | --- | --- |
 | Buyer | Overview, Orders, Account |
 | Corporate buyer | Overview, Tenders, Orders, Account |
-| Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Pickup & partners, Balance & payouts, Account |
+| Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Tenders, Pickup & partners, Balance & payouts, Account |
 | Logistics company | Sent straight to the [logistics app](https://github.com/Reazul-Islam-Fahim/Scan4Resource-logistics-frontend), already logged in |
-| Admin | Overview, Verification (approve corporate buyers and logistics companies), Users (add admins), Payouts, Activity, Account |
+| Admin | Overview (sales, commission, orders, CO₂ saved, users, last six months), Verification (approve corporate buyers and logistics companies), Users (add admins), Listings (withdraw), Orders (cancel and refund before pickup), Tenders, Payments & payouts, Ledger (every credit and payout), Commission (rates with history), Logs (everything every role and both APIs did, refused requests and errors; search and filters, live), Account |
 
 `#/signup` creates buyer, seller, corporate buyer and logistics company accounts; the last two wait for an admin
 to verify the company. One account can hold several roles (add them under Account, then switch). Admins are
@@ -49,7 +52,18 @@ created with the backend's `scripts/create_admin.py`, then by other admins. Logg
 Set `VITE_LOGISTICS_URL` (locally `http://localhost:5174`) so logistics companies are sent to the logistics app,
 which in turn sends people here to log in (`#/login?app=logistics&next=...`) and gets the login back.
 
-Tenders and payouts are empty pages in this step; they fill in as delivery and payments are connected.
+### Tenders
+
+- **Corporate buyer** (`#/dashboard/tenders`): writes a tender (materials with quantity, unit and the condition
+  accepted, the delivery site, the closing date for bids, the date needed and a private budget), saves it as a
+  draft or publishes it. Each bid shows the seller's town, the quantities and prices, the cheapest delivery from
+  the seller's logistics partners and the **landed price**, sorted cheapest first; a bar under each material shows
+  how much the bids cover. Tick one or more bids and **Award**: each becomes an order with **Book delivery** and
+  **Pay**, as for marketplace orders.
+- **Seller**: **Tenders** lists open tenders, those matching their listings and near their pickup marked
+  **Invited**. They bid on some or all materials, from stock or from a listing, and can change or withdraw the bid
+  until bidding closes. A won bid shows up in **Orders**.
+- **Admin**: **Tenders** shows every tender with its bids, and can take one down with a reason.
 
 ### Marketplace
 
@@ -63,6 +77,15 @@ listens to `/market/events`, so a new listing, a price change or a sell-out appe
 - **Buy:** tap a card for the details, choose the quantity and add it to the cart (kept in the browser). The cart
   (`#/cart`) asks for a Swiss delivery address and places the order, which reserves the materials. Logging in as
   a buyer or corporate buyer is asked for at that point, and the cart is kept.
+- **Delivery:** after ordering, the buyer goes straight to the logistics app's checkout (`VITE_LOGISTICS_URL`) to
+  pick a logistics company for each pickup. **Orders** in the buyer's dashboard shows the delivery status
+  (not booked yet, booked, delivered) with **Book delivery**, **Pay** or **Delivery details**. Once every company
+  has accepted, the buyer pays materials and delivery together by card (Stripe) in the logistics app. An order can
+  be cancelled only until delivery is booked.
+- **Money:** sellers see their balance in **Balance & payouts** (`#/dashboard/payouts`): each sale is credited when
+  delivered and paid, minus the 10% commission, and they request payouts to a Swiss IBAN. Admins see what buyers
+  paid, the commission and the balances owed in **Payments & payouts**, and mark payout requests paid once the bank
+  transfer is made, or reject them with a note.
 - **Map** (`#/map`): MapLibre with swisstopo's light base map, one point per listing (rounded to about 1 km),
   clustered until you zoom in, with the category chips, search, canton filter, list view and **near me**.
   Distances are measured from your location once you allow it, else from Zürich.
