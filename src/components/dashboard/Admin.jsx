@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
-import { adminActions, adminCreateUser, adminDecide, adminUsers, roleName } from '../../lib/auth'
+import { adminCreateUser, adminDecide, adminUsers, roleName } from '../../lib/auth'
 import { formatDate } from './format'
 
 function useAdminData(load) {
@@ -18,36 +18,6 @@ function useAdminData(load) {
 
 const loadUsers = (token) => adminUsers(token)
 const loadPending = (token) => adminUsers(token, { status: 'pending' })
-
-export function AdminOverview() {
-  const { data, error } = useAdminData(loadUsers)
-  const count = (fn) => (data ? data.filter(fn).length : '…')
-  const holds = (role) => (u) => u.roles.some((r) => r.role === role && r.status === 'active')
-  return (
-    <section className="dash-section">
-      <header>
-        <h1 className="dash-title">Platform overview</h1>
-        <p className="lede">Scan4Reuse keeps 10% from each sale and 10% from each delivery.</p>
-      </header>
-      {error && <p className="error">{error}</p>}
-      <div className="dash-stats">
-        {[
-          ['Waiting for verification', count((u) => u.roles.some((r) => r.status === 'pending'))],
-          ['Buyers', count(holds('buyer'))],
-          ['Corporate buyers', count(holds('corporate'))],
-          ['Sellers', count(holds('seller'))],
-          ['Logistics companies', count(holds('logistics'))],
-          ['Commission earned', 'CHF 0.00'],
-        ].map(([label, value]) => (
-          <div key={label} className="dash-card dash-stat">
-            <span className="note">{label}</span>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
 
 export function AdminVerification() {
   const { data, error, reload, token } = useAdminData(loadPending)
@@ -205,42 +175,6 @@ export function AdminUsers() {
           Add account
         </button>
       </form>
-    </section>
-  )
-}
-
-export function AdminActivity() {
-  const { data, error } = useAdminData(adminActions)
-  return (
-    <section className="dash-section">
-      <h1 className="dash-title">Activity</h1>
-      <p className="lede">Every admin action is recorded here.</p>
-      {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No admin actions yet.</p>}
-      {data && data.length > 0 && (
-        <div className="dash-card table-wrap">
-          <table className="dash-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((a) => (
-                <tr key={a.id}>
-                  <td>{formatDate(a.at, true)}</td>
-                  <td>{a.action}</td>
-                  <td className="mono">{a.target}</td>
-                  <td>{a.detail}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </section>
   )
 }

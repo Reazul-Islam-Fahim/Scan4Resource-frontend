@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
-import { formatPrice } from '../../lib/format'
+import { logisticsUrl } from '../../lib/auth'
+import { formatMoney, formatPrice } from '../../lib/format'
 import {
   cancelOrder,
   deleteListing,
@@ -35,12 +36,13 @@ function useLoad(load) {
   return { ...state, reload, token }
 }
 
-const LISTING_STATUS = { draft: 'Draft', active: 'Published', sold: 'Sold out', withdrawn: 'Withdrawn' }
-const ORDER_STATUS = { awaiting_delivery: 'Waiting for delivery booking', cancelled: 'Cancelled' }
+export const LISTING_STATUS = { draft: 'Draft', active: 'Published', sold: 'Sold out', withdrawn: 'Withdrawn' }
+export const ORDER_STATUS = { awaiting_delivery: 'Delivery not booked yet', delivery_booked: 'Delivery booked', delivered: 'Delivered', cancelled: 'Cancelled' }
+const needsAction = (order) => order.status === 'awaiting_delivery' || (order.status !== 'cancelled' && order.payment?.status !== 'paid')
 const qty = (q, unit) => (unit === 'm2' ? `${q} m²` : `${q}×`)
 
-function Pill({ status, labels }) {
-  const tone = status === 'active' || status === 'awaiting_delivery' ? '' : status === 'draft' ? ' status-pending' : ' status-rejected'
+export function Pill({ status, labels }) {
+  const tone = ['active', 'delivery_booked', 'delivered'].includes(status) ? '' : status === 'draft' || status === 'awaiting_delivery' ? ' status-pending' : ' status-rejected'
   return <span className={`status-pill${tone}`}>{labels[status] ?? status}</span>
 }
 
@@ -145,12 +147,16 @@ export function SellerListings() {
   )
 }
 
-function OrderCard({ order, children, showBuyer }) {
+export function OrderCard({ order, children, showBuyer, full }) {
   return (
     <article className="dash-card order-card">
       <div className="verify-head">
         <strong>Order of {formatDate(order.created_at, true)}</strong>
-        <Pill status={order.status} labels={ORDER_STATUS} />
+        <span className="pill-row">
+          {(order.payment?.status === 'paid' || order.paid) && <span className="status-pill">Paid</span>}
+          {order.payment?.status === 'refunded' && <span className="status-pill status-pending">Refunded</span>}
+          <Pill status={order.status} labels={ORDER_STATUS} />
+        </span>
       </div>
       <p className="note">
         {showBuyer ? `${order.buyer_name} · delivery to ${order.city || 'Switzerland'}` : `Delivery to ${order.address}`}
@@ -169,10 +175,29 @@ function OrderCard({ order, children, showBuyer }) {
           </li>
         ))}
       </ul>
-      <p className="order-total">
-        <span>Materials</span>
-        <strong>{formatPrice(order.goods_chf)}</strong>
-      </p>
+      {(full || !showBuyer) && order.deliveries?.length > 0 ? (
+        <>
+          <p className="order-pay note">
+            <span>Materials</span>
+            <span>{formatMoney(order.goods_chf)}</span>
+          </p>
+          {order.deliveries.map((d) => (
+            <p key={d.leg} className="order-pay note">
+              <span>Delivery by {d.company_name}</span>
+              <span>{formatMoney(d.price_chf)}</span>
+            </p>
+          ))}
+          <p className="order-total">
+            <span>Total</span>
+            <strong>{formatMoney(order.payment.total_chf)}</strong>
+          </p>
+        </>
+      ) : (
+        <p className="order-total">
+          <span>Materials</span>
+          <strong>{formatPrice(order.goods_chf)}</strong>
+        </p>
+      )}
       {children}
     </article>
   )
@@ -184,7 +209,7 @@ export function SellerSales() {
     <section className="dash-section">
       <header>
         <h1 className="dash-title">Orders</h1>
-        <p className="lede">What buyers ordered from you. The pickup is booked with a logistics company in the next step.</p>
+        <p className="lede">What buyers ordered from you. Once delivery is booked and paid, the logistics company picks up; you are credited when it is delivered.</p>
       </header>
       {error && <p className="error">{error}</p>}
       {data && data.length === 0 && <p className="dash-card note">No orders yet. They appear here as soon as someone buys.</p>}
@@ -213,7 +238,7 @@ export function BuyerOrders() {
       <header className="dash-head">
         <div>
           <h1 className="dash-title">Orders</h1>
-          <p className="lede">Your materials are reserved. Delivery is booked with a logistics company in the next step.</p>
+          <p className="lede">Your materials are reserved. Book the delivery, then pay materials and delivery together once every logistics company has accepted.</p>
         </div>
         <Link to="/market" className="btn btn-secondary">
           Browse the marketplace
@@ -224,13 +249,18 @@ export function BuyerOrders() {
       {data && data.length === 0 && <p className="dash-card note">No orders yet.</p>}
       {(data ?? []).map((order) => (
         <OrderCard key={order.id} order={order}>
-          {order.status === 'awaiting_delivery' && (
-            <div className="row-actions">
+          <div className="row-actions">
+            {order.status !== 'cancelled' && logisticsUrl(token) && (
+              <a className={`btn ${needsAction(order) ? 'btn-primary' : 'btn-secondary'}`} href={logisticsUrl(token, `/checkout?order=${order.id}`)}>
+                {order.status === 'awaiting_delivery' ? 'Book delivery' : order.payment?.status !== 'paid' ? `Pay ${formatMoney(order.payment.total_chf)}` : 'Delivery details'}
+              </a>
+            )}
+            {order.status === 'awaiting_delivery' && (
               <button type="button" className="btn btn-outline" onClick={() => cancel(order)}>
                 Cancel order
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </OrderCard>
       ))}
     </section>
