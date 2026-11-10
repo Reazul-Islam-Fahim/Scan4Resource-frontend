@@ -1,4 +1,5 @@
-import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 import { LogoutIcon } from '../Icons'
 import { ROLE_ICONS, pagesFor } from './roles'
@@ -9,6 +10,13 @@ const TABS_THAT_FIT = 7
 export default function Dashboard() {
   const auth = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  // On short screens the menu scrolls: keep the open page in sight.
+  useEffect(() => {
+    document.querySelector('.dash-nav .is-active')?.scrollIntoView({ block: 'nearest' })
+  }, [pathname])
+
   if (!auth.loggedIn) return <Navigate to="/login?next=/dashboard" replace />
 
   const pages = pagesFor(auth)
