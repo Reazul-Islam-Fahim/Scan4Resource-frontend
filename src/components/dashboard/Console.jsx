@@ -414,7 +414,7 @@ export function AdminLedger() {
       {data && data.length === 0 && <p className="dash-card note">Nothing yet. Lines appear when a paid order is delivered.</p>}
       {data && data.length > 0 && (
         <div className="dash-card table-wrap">
-          <table className="dash-table ledger">
+          <table className="dash-table ledger table-cards">
             <thead>
               <tr>
                 <th>Date</th>
@@ -428,18 +428,22 @@ export function AdminLedger() {
             <tbody>
               {data.map((line) => (
                 <tr key={line.id}>
-                  <td>{formatDate(line.created_at, true)}</td>
-                  <td>
-                    {line.name}
-                    <span className="note block">{roleName(line.role)}</span>
+                  <td data-label="Date">{formatDate(line.created_at, true)}</td>
+                  <td data-label="Account">
+                    <span>
+                      {line.name}
+                      <span className="note block">{roleName(line.role)}</span>
+                    </span>
                   </td>
-                  <td>
-                    {KIND[line.kind] ?? line.kind}
-                    {line.memo && <span className="note block">{line.memo}</span>}
+                  <td data-label="What">
+                    <span>
+                      {KIND[line.kind] ?? line.kind}
+                      {line.memo && <span className="note block">{line.memo}</span>}
+                    </span>
                   </td>
-                  <td className="num">{line.kind === 'payout' ? '' : formatMoney(line.gross_chf)}</td>
-                  <td className="num">{line.kind === 'payout' ? '' : formatMoney(line.fee_chf)}</td>
-                  <td className="num">{formatMoney(line.amount_chf)}</td>
+                  <td className="num" data-label="Gross">{line.kind === 'payout' ? '' : formatMoney(line.gross_chf)}</td>
+                  <td className="num" data-label="Fee">{line.kind === 'payout' ? '' : formatMoney(line.fee_chf)}</td>
+                  <td className="num" data-label="Amount">{formatMoney(line.amount_chf)}</td>
                 </tr>
               ))}
             </tbody>

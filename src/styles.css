@@ -2244,6 +2244,7 @@ button:disabled {
 }
 
 .dash-main {
+  container: dash-main / inline-size;
   max-width: 960px;
   margin: 0 auto;
   padding: calc(20px + env(safe-area-inset-top)) 16px calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom));
@@ -3670,8 +3671,11 @@ a.btn {
   .dash .row-actions {
     flex-wrap: wrap;
   }
+}
 
-  /* tables marked as cards become one card per row on phones */
+/* Tables marked as cards become one card per row whenever the page column is narrow: on phones, and on laptops
+   and tablets where the open menu leaves too little room for every column. */
+@container dash-main (max-width: 720px) {
   .dash .table-cards thead {
     display: none;
   }
@@ -3695,7 +3699,7 @@ a.btn {
 
   .dash .table-cards td {
     display: grid;
-    grid-template-columns: 84px 1fr;
+    grid-template-columns: 104px 1fr;
     gap: 10px;
     padding: 4px 6px;
     border: 0;
@@ -3708,6 +3712,14 @@ a.btn {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  .dash .table-cards.ledger .num {
+    text-align: left;
+  }
+
+  .dash .table-cards td:empty {
+    display: none;
   }
 }
 

@@ -110,7 +110,7 @@ export function SellerEarnings() {
               <p className="note">Nothing yet. Sales appear here once they are delivered and paid.</p>
             ) : (
               <div className="table-wrap">
-                <table className="dash-table ledger">
+                <table className="dash-table ledger table-cards">
                   <thead>
                     <tr>
                       <th>Date</th>
@@ -125,23 +125,25 @@ export function SellerEarnings() {
                       .filter((p) => p.status !== 'paid')
                       .map((p) => (
                         <tr key={p.id}>
-                          <td>{formatDate(p.created_at)}</td>
-                          <td>
-                            Payout to …{p.iban.slice(-4)} <span className={`status-pill${payoutTone(p.status)}`}>{PAYOUT_STATUS[p.status]}</span>
-                            {p.note && <span className="note block">{p.note}</span>}
+                          <td data-label="Date">{formatDate(p.created_at)}</td>
+                          <td data-label="What">
+                            <span>
+                              Payout to …{p.iban.slice(-4)} <span className={`status-pill${payoutTone(p.status)}`}>{PAYOUT_STATUS[p.status]}</span>
+                              {p.note && <span className="note block">{p.note}</span>}
+                            </span>
                           </td>
                           <td />
                           <td />
-                          <td className="num">{formatMoney(p.amount_chf)}</td>
+                          <td className="num" data-label="You get">{formatMoney(p.amount_chf)}</td>
                         </tr>
                       ))}
                     {data.entries.map((e) => (
                       <tr key={e.id}>
-                        <td>{formatDate(e.created_at)}</td>
-                        <td>{e.kind === 'payout' ? 'Payout (bank transfer)' : e.memo}</td>
-                        <td className="num">{e.kind === 'payout' ? '' : formatMoney(e.gross_chf)}</td>
-                        <td className="num">{e.kind === 'payout' ? '' : formatMoney(-e.fee_chf)}</td>
-                        <td className="num">{formatMoney(e.amount_chf)}</td>
+                        <td data-label="Date">{formatDate(e.created_at)}</td>
+                        <td data-label="What">{e.kind === 'payout' ? 'Payout (bank transfer)' : e.memo}</td>
+                        <td className="num" data-label="Sale">{e.kind === 'payout' ? '' : formatMoney(e.gross_chf)}</td>
+                        <td className="num" data-label="Commission">{e.kind === 'payout' ? '' : formatMoney(-e.fee_chf)}</td>
+                        <td className="num" data-label="You get">{formatMoney(e.amount_chf)}</td>
                       </tr>
                     ))}
                   </tbody>
