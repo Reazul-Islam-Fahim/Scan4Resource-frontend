@@ -33,7 +33,7 @@ export function Profile() {
         {auth.loggedIn ? (
           <>
             <p className="lede">
-              Logged in as {auth.user.name} ({roleName(auth.role)}).
+              Logged in as {auth.user.name} ({auth.roleName || roleName(auth.role)}).
             </p>
             <Link to="/dashboard" className="btn btn-primary">
               Open my dashboard

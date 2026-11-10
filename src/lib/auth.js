@@ -16,6 +16,16 @@ export const ROLES = [
 export const NEEDS_COMPANY = ['corporate', 'logistics']
 export const roleName = (role) => ROLES.find((r) => r.role === role)?.name ?? role
 
+// What each kind of role can do by default; the admin can change a role's permissions (Roles page). Used only
+// when a stored login predates permissions.
+export const DEFAULT_PERMISSIONS = {
+  buyer: ['market.buy'],
+  corporate: ['market.buy', 'tenders.create'],
+  seller: ['market.sell', 'tenders.bid', 'payouts.request'],
+  logistics: ['deliveries.handle', 'payouts.request'],
+  admin: ['admin.verify', 'admin.users', 'admin.roles', 'admin.market', 'admin.finance', 'admin.analytics', 'admin.logs'],
+}
+
 export function loadAuth() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null')
@@ -44,8 +54,8 @@ const authed = (token) => ({ headers: { Authorization: `Bearer ${token}` } })
 export const login = (email, password, role) => request('/auth/login', json({ email, password, role }))
 export const register = (fields) => request('/auth/register', json(fields))
 export const fetchMe = (token) => request('/auth/me', authed(token))
-export const addRole = (token, fields) => request('/auth/roles', json(fields, token))
-export const switchRole = (token, role) => request('/auth/switch', json({ role }, token))
+/** The roles people can sign up for (the admin decides which). */
+export const signupRoles = () => request('/auth/roles')
 
 export const adminUsers = (token, params = {}) =>
   request(`/admin/users?${new URLSearchParams(Object.entries(params).filter(([, v]) => v))}`, authed(token))
@@ -53,6 +63,17 @@ export const adminDecide = (token, userId, role, status, note = '') =>
   request(`/admin/users/${encodeURIComponent(userId)}/roles/${role}`, json({ status, note }, token))
 export const adminCreateUser = (token, fields) => request('/admin/users', json(fields, token))
 export const adminActions = (token) => request('/admin/actions', authed(token))
+export const adminSetUserRole = (token, userId, fields) =>
+  request(`/admin/users/${encodeURIComponent(userId)}/role`, { ...json(fields, token), method: 'PUT' })
+
+// roles and permissions
+export const adminRoles = (token) => request('/admin/roles', authed(token))
+export const adminPermissions = (token) => request('/admin/permissions', authed(token))
+export const adminCreateRole = (token, fields) => request('/admin/roles', json(fields, token))
+export const adminUpdateRole = (token, key, fields) =>
+  request(`/admin/roles/${encodeURIComponent(key)}`, { ...json(fields, token), method: 'PATCH' })
+export const adminDeleteRole = (token, key) =>
+  request(`/admin/roles/${encodeURIComponent(key)}`, { method: 'DELETE', ...authed(token) })
 
 /** The logistics app, opened already logged in: the token travels in the URL once and the app keeps it. */
 export function logisticsUrl(token, next = '/') {

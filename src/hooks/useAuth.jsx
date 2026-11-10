@@ -4,7 +4,20 @@ import * as api from '../lib/auth'
 
 const AuthContext = createContext(null)
 
-const fromSession = (s) => ({ token: s.token, user: s.user, role: s.role, status: s.user.roles.find((r) => r.role === s.role)?.status ?? 'active' })
+// `role` is the role's kind (buyer, corporate, seller, logistics, admin): it picks the dashboard. `roleKey` is the
+// role itself, which may be one an admin made; `permissions` decide which pages and actions it gets.
+const fromSession = (s) => {
+  const entry = s.user.roles.find((r) => r.role === (s.role_key || s.role))
+  return {
+    token: s.token,
+    user: s.user,
+    role: s.role,
+    roleKey: s.role_key || s.role,
+    roleName: s.role_name || entry?.name || api.roleName(s.role),
+    permissions: s.permissions || entry?.permissions || api.DEFAULT_PERMISSIONS[s.role] || [],
+    status: entry?.status ?? 'active',
+  }
+}
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(() => api.loadAuth())
@@ -21,7 +34,15 @@ export function AuthProvider({ children }) {
     if (!auth?.token) return
     try {
       const me = await api.fetchMe(auth.token)
-      save({ ...auth, user: me.user, status: me.status })
+      save({
+        ...auth,
+        user: me.user,
+        status: me.status,
+        role: me.role ?? auth.role,
+        roleKey: me.role_key ?? auth.roleKey,
+        roleName: me.role_name ?? auth.roleName,
+        permissions: me.permissions ?? auth.permissions,
+      })
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) save(null)
     }
@@ -47,15 +68,10 @@ export function AuthProvider({ children }) {
         save(next)
         return next
       },
-      async switchRole(role) {
-        const next = fromSession(await api.switchRole(auth.token, role))
-        save(next)
-        return next
-      },
-      async addRole(fields) {
-        const { user } = await api.addRole(auth.token, fields)
-        save({ ...auth, user })
-        return user
+      /** Whether this login's role has the permission (see the Roles page). */
+      can(perm) {
+        const perms = auth?.permissions ?? api.DEFAULT_PERMISSIONS[auth?.role] ?? []
+        return perms.includes(perm)
       },
       refresh,
       logout,

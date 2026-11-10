@@ -1,8 +1,7 @@
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
-import { roleName } from '../../lib/auth'
 import { LogoutIcon } from '../Icons'
-import { DASHBOARDS, ROLE_ICONS } from './roles'
+import { ROLE_ICONS, pagesFor } from './roles'
 
 /** Every role's dashboard: a sidebar on wide screens, a bottom tab bar on phones, the role's pages inside. */
 const TABS_THAT_FIT = 7
@@ -12,8 +11,8 @@ export default function Dashboard() {
   const navigate = useNavigate()
   if (!auth.loggedIn) return <Navigate to="/login?next=/dashboard" replace />
 
-  const pages = DASHBOARDS[auth.role] ?? DASHBOARDS.buyer
-  const RoleIcon = ROLE_ICONS[auth.role]
+  const pages = pagesFor(auth)
+  const RoleIcon = ROLE_ICONS[auth.role] ?? ROLE_ICONS.buyer
   const logout = () => {
     auth.logout()
     navigate('/login', { replace: true })
@@ -31,33 +30,40 @@ export default function Dashboard() {
           </span>
           <span>
             <strong>{auth.user.name}</strong>
-            <span className="note">{roleName(auth.role)}</span>
+            <span className="note">{auth.roleName}</span>
           </span>
         </div>
         <nav className="dash-nav" aria-label="Dashboard">
           {pages.map(({ path, label, icon: Icon }) => (
-            <NavLink key={path} to={`/dashboard/${path}`} end className={({ isActive }) => `dash-link${isActive ? ' is-active' : ''}`}>
+            <NavLink
+              key={path}
+              to={`/dashboard/${path}`}
+              end
+              title={label}
+              className={({ isActive }) => `dash-link${isActive ? ' is-active' : ''}`}
+            >
               <Icon width={20} height={20} />
-              {label}
+              <span className="dash-link-label">{label}</span>
             </NavLink>
           ))}
         </nav>
-        <button type="button" className="dash-link dash-logout" onClick={logout}>
+        <button type="button" className="dash-link dash-logout" onClick={logout} title="Log out">
           <LogoutIcon width={20} height={20} />
-          Log out
+          <span className="dash-link-label">Log out</span>
         </button>
       </aside>
 
       <main className="dash-main">
         {auth.status === 'pending' && (
           <p className="hint-box dash-banner">
-            Your {roleName(auth.role).toLowerCase()} account is waiting for verification by the Scan4Reuse team. You can set
+            Your {auth.roleName.toLowerCase()} account is waiting for verification by the Scan4Reuse team. You can set
             up your profile meanwhile; trading opens once it is verified.
           </p>
         )}
         <Routes>
+          {pages.length > 0 && pages[0].path !== '' && <Route index element={<Navigate to={`/dashboard/${pages[0].path}`} replace />} />}
           {pages.map(({ path, element }) => (
-            <Route key={path} index={path === ''} path={path || undefined} element={element} />
+            <Route key={path} index={path === ''} path={path || undefined} element={<div className="dash-page">{element}</div>} />
           ))}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

@@ -12,7 +12,7 @@ export default function Shell({ onScan }) {
     window.scrollTo(0, 0)
   }, [pathname])
 
-  const className = ['app', market && 'app-wide', pathname === '/map' && 'app-map', !flow && 'has-tabs']
+  const className = ['app', (market || pathname === '/') && 'app-wide', pathname === '/' && 'app-home', pathname === '/map' && 'app-map', !flow && 'has-tabs']
     .filter(Boolean)
     .join(' ')
 
