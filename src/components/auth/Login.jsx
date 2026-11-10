@@ -2,27 +2,33 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 import { describeError, isMock } from '../../lib/api'
-import { roleName } from '../../lib/auth'
+import { emailProblem, loginPasswordProblem, normalizeEmail } from '../../lib/validation'
 import { afterLogin } from './redirect'
-import RolePicker from './RolePicker'
 
-/** One login page for every role. The role picked here decides which dashboard opens. */
+/** One login page for every role: email and password only. The account decides which dashboard opens
+ *  (a link like /login?role=seller asks for that role when the account has it). Roles are picked at sign-up. */
 export default function Login() {
   const auth = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const [role, setRole] = useState(params.get('role') || 'buyer')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [touched, setTouched] = useState({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  const problems = { email: emailProblem(email), password: loginPasswordProblem(password) }
+  const shown = (key) => (touched[key] ? problems[key] : '')
+  const touch = (key) => () => setTouched((t) => ({ ...t, [key]: true }))
+
   const submit = async (event) => {
     event.preventDefault()
+    setTouched({ email: true, password: true })
+    if (problems.email || problems.password) return
     setBusy(true)
     setError('')
     try {
-      const session = await auth.login(email, password, role)
+      const session = await auth.login(normalizeEmail(email), password, params.get('role') || undefined)
       afterLogin(session, params, navigate)
     } catch (err) {
       setError(err.detail || describeError(err))
@@ -32,40 +38,53 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <form className="auth-card" onSubmit={submit}>
+      <form className="auth-card" onSubmit={submit} noValidate>
         <Link to="/" className="wordmark auth-wordmark">
           scan4reuse
         </Link>
         <div>
           <h1 className="auth-title">Log in</h1>
-          <p className="note">Choose how you use Scan4Reuse, then log in with your email.</p>
+          <p className="note">Log in with the email and password of your Scan4Reuse account.</p>
         </div>
-        <RolePicker value={role} onChange={setRole} />
         <label className="field">
           Email
-          <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            className={`input${shown('email') ? ' is-invalid' : ''}`}
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            required
+            maxLength={254}
+            value={email}
+            aria-invalid={Boolean(shown('email'))}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={touch('email')}
+          />
+          {shown('email') && <span className="field-error">{shown('email')}</span>}
         </label>
         <label className="field">
           Password
-          <input className="input" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input
+            className={`input${shown('password') ? ' is-invalid' : ''}`}
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            aria-invalid={Boolean(shown('password'))}
+            onChange={(e) => setPassword(e.target.value)}
+            onBlur={touch('password')}
+          />
+          {shown('password') && <span className="field-error">{shown('password')}</span>}
         </label>
         {isMock && <p className="error">Logging in needs the backend. Set VITE_API_URL and restart the app.</p>}
         {error && <p className="error" role="alert">{error}</p>}
         <button type="submit" className="btn btn-primary btn-block" disabled={busy || isMock}>
-          {busy ? 'Logging in…' : `Log in as ${roleName(role)}`}
+          {busy ? 'Logging in…' : 'Log in'}
         </button>
-        {role !== 'admin' && (
-          <p className="note auth-switch">
-            New to Scan4Reuse? <Link to={`/signup?${withRole(params, role)}`}>Create an account</Link>
-          </p>
-        )}
+        <p className="note auth-switch">
+          New to Scan4Reuse? <Link to={`/signup?${params}`}>Create an account</Link>
+        </p>
       </form>
     </div>
   )
-}
-
-function withRole(params, role) {
-  const next = new URLSearchParams(params)
-  next.set('role', role)
-  return next.toString()
 }

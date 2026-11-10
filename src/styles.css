@@ -3387,3 +3387,13 @@ a.btn {
     margin-left: 0;
   }
 }
+
+.field-error {
+  color: #b3261e;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.input.is-invalid {
+  border-color: #b3261e;
+}

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 import { describeError, isMock } from '../../lib/api'
 import { NEEDS_COMPANY, roleName } from '../../lib/auth'
+import { PASSWORD_MAX, PASSWORD_MIN, emailProblem, normalizeEmail, passwordProblem } from '../../lib/validation'
 import { afterLogin } from './redirect'
 import RolePicker from './RolePicker'
 
@@ -17,16 +18,28 @@ export default function Signup() {
   const [fields, setFields] = useState(EMPTY)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [touched, setTouched] = useState({})
   const company = NEEDS_COMPANY.includes(role)
 
   const set = (key) => (event) => setFields((f) => ({ ...f, [key]: event.target.value }))
+  const touch = (key) => () => setTouched((t) => ({ ...t, [key]: true }))
+  const problems = {
+    name: fields.name.trim() ? '' : 'Enter your name.',
+    email: emailProblem(fields.email),
+    password: passwordProblem(fields.password, fields.email),
+    company_name: company && !fields.company_name.trim() ? 'Enter the company name.' : '',
+  }
+  const shown = (key) => (touched[key] ? problems[key] : '')
+  const invalid = (key) => `input${shown(key) ? ' is-invalid' : ''}`
 
   const submit = async (event) => {
     event.preventDefault()
+    setTouched({ name: true, email: true, password: true, company_name: true })
+    if (Object.values(problems).some(Boolean)) return
     setBusy(true)
     setError('')
     try {
-      const body = { ...fields, role }
+      const body = { ...fields, name: fields.name.trim(), email: normalizeEmail(fields.email), role }
       if (!company) Object.assign(body, { company_name: '', company_uid: '', address: '' })
       const session = await auth.register(body)
       afterLogin(session, params, navigate)
@@ -38,7 +51,7 @@ export default function Signup() {
 
   return (
     <div className="auth-page">
-      <form className="auth-card" onSubmit={submit}>
+      <form className="auth-card" onSubmit={submit} noValidate>
         <Link to="/" className="wordmark auth-wordmark">
           scan4reuse
         </Link>
@@ -49,12 +62,14 @@ export default function Signup() {
         <RolePicker value={role} onChange={setRole} withAdmin={false} />
         <label className="field">
           Full name
-          <input className="input" autoComplete="name" required value={fields.name} onChange={set('name')} />
+          <input className={invalid('name')} autoComplete="name" required maxLength={120} value={fields.name} onChange={set('name')} onBlur={touch('name')} aria-invalid={Boolean(shown('name'))} />
+          {shown('name') && <span className="field-error">{shown('name')}</span>}
         </label>
         <div className="field-row">
           <label className="field">
             Email
-            <input className="input" type="email" autoComplete="email" required value={fields.email} onChange={set('email')} />
+            <input className={invalid('email')} type="email" inputMode="email" autoComplete="email" required maxLength={254} value={fields.email} onChange={set('email')} onBlur={touch('email')} aria-invalid={Boolean(shown('email'))} />
+            {shown('email') && <span className="field-error">{shown('email')}</span>}
           </label>
           <label className="field">
             Phone
@@ -63,14 +78,19 @@ export default function Signup() {
         </div>
         <label className="field">
           Password
-          <input className="input" type="password" autoComplete="new-password" minLength={8} required value={fields.password} onChange={set('password')} />
-          <span className="field-hint">At least 8 characters.</span>
+          <input className={invalid('password')} type="password" autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} required value={fields.password} onChange={set('password')} onBlur={touch('password')} aria-invalid={Boolean(shown('password'))} />
+          {shown('password') ? (
+            <span className="field-error">{shown('password')}</span>
+          ) : (
+            <span className="field-hint">At least {PASSWORD_MIN} characters, with a letter and a number, space or symbol.</span>
+          )}
         </label>
         {company && (
           <>
             <label className="field">
               Company name
-              <input className="input" autoComplete="organization" required value={fields.company_name} onChange={set('company_name')} />
+              <input className={invalid('company_name')} autoComplete="organization" required value={fields.company_name} onChange={set('company_name')} onBlur={touch('company_name')} aria-invalid={Boolean(shown('company_name'))} />
+              {shown('company_name') && <span className="field-error">{shown('company_name')}</span>}
             </label>
             <div className="field-row">
               <label className="field">
