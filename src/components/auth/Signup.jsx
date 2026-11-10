@@ -77,7 +77,7 @@ export default function Signup() {
         </Link>
         <div>
           <h1 className="auth-title">Create an account</h1>
-          <p className="note">You can add more roles to the same account later, from your profile.</p>
+          <p className="note">Pick the role you will use. Only a Scan4Reuse admin can change it later.</p>
         </div>
         <RolePicker roles={roles} value={picked?.role} onChange={setRole} />
         <label className="field">
