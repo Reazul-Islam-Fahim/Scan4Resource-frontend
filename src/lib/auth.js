@@ -83,3 +83,7 @@ export function logisticsUrl(token, next = '/') {
   return `${LOGISTICS_URL}/#/auth?${query}`
 }
 export const hasLogisticsApp = () => LOGISTICS_URL !== ''
+
+// The numbers on the dashboard menu, and telling the backend a page was opened (its "new" count starts again).
+export const fetchAttention = (token) => request('/me/attention', authed(token))
+export const markSeen = (token, page) => request('/me/seen', json({ page }, token))

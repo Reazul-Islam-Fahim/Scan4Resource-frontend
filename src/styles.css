@@ -2461,7 +2461,7 @@ button:disabled {
   font-size: 12.5px;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 760px) {
   .dash {
     display: grid;
     grid-template-columns: 260px 1fr;
@@ -3559,14 +3559,14 @@ a.btn {
   }
 }
 
-/* tablets: the menu shrinks to icons beside the page instead of a bottom bar */
-@media (min-width: 760px) and (max-width: 959px) {
-  .dash {
+/* collapsed (PC, laptop and tablet): the menu shrinks to icons beside the page; names show on hover */
+@media (min-width: 760px) {
+  .dash.is-collapsed {
     display: grid;
     grid-template-columns: 84px 1fr;
   }
 
-  .dash .dash-side {
+  .dash.is-collapsed .dash-side {
     position: sticky;
     top: 0;
     display: flex;
@@ -3575,29 +3575,27 @@ a.btn {
     gap: 14px;
     height: 100dvh;
     padding: 20px 10px;
-    overflow-y: auto;
-    scrollbar-width: none;
   }
 
-  .dash .dash-wordmark,
-  .dash .dash-who > span:last-child,
-  .dash .dash-link-label {
+  .dash.is-collapsed .dash-wordmark,
+  .dash.is-collapsed .dash-who > span:last-child,
+  .dash.is-collapsed .dash-link-label {
     display: none;
   }
 
-  .dash .dash-who {
+  .dash.is-collapsed .dash-who {
     display: grid;
     place-items: center;
     padding: 10px;
     border-radius: 16px;
   }
 
-  .dash .dash-nav {
+  .dash.is-collapsed .dash-nav {
     display: grid;
     gap: 8px;
   }
 
-  .dash .dash-link {
+  .dash.is-collapsed .dash-link {
     display: grid;
     place-items: center;
     width: 52px;
@@ -3609,16 +3607,16 @@ a.btn {
     color: var(--graphite);
   }
 
-  .dash .dash-logout {
+  .dash.is-collapsed .dash-logout {
     margin-top: auto;
   }
 
-  .dash .dash-main {
+  .dash.is-collapsed .dash-main {
     width: 100%;
     padding: 28px 24px 40px;
   }
 
-  .dash .dash-tabs {
+  .dash.is-collapsed .dash-tabs {
     display: none;
   }
 }
@@ -4113,7 +4111,7 @@ a.btn {
   }
 }
 
-@media (min-width: 960px) and (max-height: 820px) {
+@media (min-width: 760px) and (max-height: 820px) {
   .dash .dash-side {
     gap: 14px;
     padding-block: 18px;
@@ -4125,5 +4123,122 @@ a.btn {
 
   .dash .dash-link {
     padding-block: 8px;
+  }
+}
+
+/* ---- the menu's head (wordmark and the collapse button) and the numbers on the menu ---------------------- */
+.dash-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-toggle {
+  display: none;
+}
+
+.dash-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 2px 2px 5px rgba(150, 181, 168, 0.7), -2px -2px 5px rgba(255, 255, 255, 0.9);
+  animation: dash-pop 0.45s var(--ease, ease-out);
+}
+
+.dash-icon {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+}
+
+/* on an icon (collapsed menu, phone tab bar) the number is a bubble on its corner */
+.dash-icon > .dash-count {
+  position: absolute;
+  top: -8px;
+  right: -11px;
+  min-width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0 5px;
+  font-size: 11px;
+  box-shadow: 0 0 0 2px var(--neu-bg, #fff);
+}
+
+@media (min-width: 760px) {
+  .dash {
+    transition: grid-template-columns 0.32s var(--ease);
+  }
+
+  .dash-toggle {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--neu-surface);
+    color: var(--green);
+    box-shadow: var(--neu-raise-sm);
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s var(--ease);
+  }
+
+  .dash-toggle:hover {
+    transform: scale(1.06);
+  }
+
+  .dash-toggle:active {
+    box-shadow: var(--neu-inset-sm);
+  }
+
+  .dash-toggle:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  .dash-menu-head .dash-wordmark {
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .dash.is-collapsed .dash-menu-head {
+    justify-content: center;
+  }
+
+  /* expanded: the name and the number share the row; the icon carries no bubble */
+  .dash:not(.is-collapsed) .dash-nav .dash-icon > .dash-count {
+    display: none;
+  }
+
+  .dash.is-collapsed .dash-nav .dash-link > .dash-count {
+    display: none;
+  }
+
+  .dash-side .dash-link-label,
+  .dash-side .dash-wordmark,
+  .dash-who > span:last-child {
+    animation: dash-fade 0.3s var(--ease) both;
+  }
+}
+
+@keyframes dash-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

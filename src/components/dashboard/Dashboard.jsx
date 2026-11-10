@@ -1,16 +1,46 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import useAttention from '../../hooks/useAttention'
 import useAuth from '../../hooks/useAuth'
-import { LogoutIcon } from '../Icons'
+import { ChevronLeft, ChevronRight, LogoutIcon } from '../Icons'
 import { ROLE_ICONS, pagesFor } from './roles'
 
-/** Every role's dashboard: a sidebar on wide screens, a bottom tab bar on phones, the role's pages inside. */
+/** Every role's dashboard: a side menu on PC, laptop and tablet (open or collapsed to icons), a bottom tab bar on
+ *  phones, the role's pages inside. Pages with something waiting carry a number. */
 const TABS_THAT_FIT = 7
+const MENU_KEY = 's4r.menu'
+
+function storedCollapsed() {
+  try {
+    return localStorage.getItem(MENU_KEY) === 'collapsed'
+  } catch {
+    return false
+  }
+}
+
+const Count = ({ n, label }) =>
+  n > 0 ? (
+    <span className="dash-count" aria-label={`${n} waiting in ${label}`}>
+      {n > 99 ? '99+' : n}
+    </span>
+  ) : null
 
 export default function Dashboard() {
   const auth = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const page = pathname.replace(/^\/dashboard\/?/, '').split('/')[0]
+  const attention = useAttention(auth.token, page)
+  const [collapsed, setCollapsed] = useState(storedCollapsed)
+  const toggle = () =>
+    setCollapsed((was) => {
+      try {
+        localStorage.setItem(MENU_KEY, was ? 'open' : 'collapsed')
+      } catch {
+        // private mode: remembered until the tab is closed
+      }
+      return !was
+    })
 
   // On short screens the menu scrolls: keep the open page in sight.
   useEffect(() => {
@@ -27,11 +57,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dash">
+    <div className={`dash${collapsed ? ' is-collapsed' : ''}`}>
       <aside className="dash-side">
-        <NavLink to="/" className="wordmark dash-wordmark">
-          scan4reuse
-        </NavLink>
+        <div className="dash-menu-head">
+          <NavLink to="/" className="wordmark dash-wordmark">
+            scan4reuse
+          </NavLink>
+          <button
+            type="button"
+            className="dash-toggle"
+            onClick={toggle}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
+            title={collapsed ? 'Expand menu' : 'Collapse menu'}
+          >
+            {collapsed ? <ChevronRight width={16} height={16} /> : <ChevronLeft width={16} height={16} />}
+          </button>
+        </div>
         <div className="dash-who">
           <span className="role-icon">
             <RoleIcon width={20} height={20} />
@@ -50,8 +92,12 @@ export default function Dashboard() {
               title={label}
               className={({ isActive }) => `dash-link${isActive ? ' is-active' : ''}`}
             >
-              <Icon width={20} height={20} />
+              <span className="dash-icon">
+                <Icon width={20} height={20} />
+                <Count n={attention.pages[path]} label={label} />
+              </span>
               <span className="dash-link-label">{label}</span>
+              <Count n={attention.pages[path]} label={label} />
             </NavLink>
           ))}
         </nav>
@@ -90,7 +136,10 @@ export default function Dashboard() {
               ref={(el) => el?.classList.contains('is-active') && el.scrollIntoView({ block: 'nearest', inline: 'nearest' })}
               className={({ isActive }) => `tab${isActive ? ' is-active' : ''}`}
             >
-              <Icon />
+              <span className="dash-icon">
+                <Icon />
+                <Count n={attention.pages[path]} label={label} />
+              </span>
               {label.split(' ')[0]}
             </NavLink>
           ))}

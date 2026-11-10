@@ -34,6 +34,9 @@ export function describeError(err) {
   return 'The connection failed. Check your internet connection and try again.'
 }
 
+/** Fired after every successful change (POST, PUT, PATCH, DELETE), so the dashboard menu can update its numbers. */
+export const CHANGED = 's4r:changed'
+
 export async function request(path, options = {}, timeoutMs = 10000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -42,6 +45,10 @@ export async function request(path, options = {}, timeoutMs = 10000) {
     if (!response.ok) {
       const text = await response.text().catch(() => '')
       throw new ApiError(response.status, text.slice(0, 200), readDetail(text))
+    }
+    const method = (options.method || 'GET').toUpperCase()
+    if (method !== 'GET' && !path.startsWith('/me/') && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(CHANGED)) // something changed: the menu's numbers may have too
     }
     if (response.status === 204) return null
     return await response.json()
