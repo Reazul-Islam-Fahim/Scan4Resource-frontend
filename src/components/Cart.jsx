@@ -24,8 +24,7 @@ export default function Cart() {
   const [error, setError] = useState('')
 
   const sellers = [...new Set(cart.lines.map((line) => line.seller))]
-  const canBuy = auth.loggedIn && BUYER_ROLES.includes(auth.role)
-  const heldBuyerRole = auth.loggedIn && auth.user.roles.find((r) => BUYER_ROLES.includes(r.role) && r.status === 'active')
+  const canBuy = auth.loggedIn && BUYER_ROLES.includes(auth.role) && auth.can('market.buy')
 
   const order = async (e) => {
     e.preventDefault()
@@ -130,10 +129,11 @@ export default function Cart() {
             <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
               {busy ? 'Placing the order…' : 'Order and choose delivery'}
             </button>
-          ) : heldBuyerRole ? (
-            <button type="button" className="btn btn-primary btn-block" onClick={() => auth.switchRole(heldBuyerRole.role)}>
-              Switch to your buyer role to order
-            </button>
+          ) : auth.loggedIn ? (
+            <p className="hint-box">
+              Your {auth.roleName} account cannot order materials. Ordering needs a buyer account; only a Scan4Reuse admin
+              can change an account&apos;s role.
+            </p>
           ) : (
             <button type="button" className="btn btn-primary btn-block" onClick={() => navigate('/login?role=buyer&next=/cart')}>
               Log in as a buyer to order

@@ -135,3 +135,9 @@ export const UsersIcon = make(
     <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6" />
   </>,
 )
+export const KeyIcon = make(
+  <>
+    <circle cx="8" cy="15" r="4" />
+    <path d="M11 12l8-8M16 7l2.5 2.5M14 9l2 2" />
+  </>,
+)

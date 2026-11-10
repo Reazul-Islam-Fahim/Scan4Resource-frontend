@@ -1,17 +1,15 @@
-import { ROLES } from '../../lib/auth'
 import { BagIcon, BuildingIcon, ScanIcon, ShieldIcon, TruckIcon } from '../Icons'
 
 const ICONS = { buyer: BagIcon, corporate: BuildingIcon, seller: ScanIcon, logistics: TruckIcon, admin: ShieldIcon }
 
-/** The five roles as cards; one is picked. Sign-up leaves admin out (admins are added by an admin). */
-export default function RolePicker({ value, onChange, withAdmin = true }) {
-  const roles = withAdmin ? ROLES : ROLES.filter((r) => r.role !== 'admin')
+/** The roles people can sign up for, as cards; one is picked. The admin decides which roles are offered. */
+export default function RolePicker({ roles, value, onChange }) {
   return (
     <fieldset className="role-picker">
       <legend className="field-label">I am a</legend>
       <div className="role-grid">
-        {roles.map(({ role, name, text }) => {
-          const Icon = ICONS[role]
+        {roles.map(({ role, name, text, kind }) => {
+          const Icon = ICONS[kind ?? role] ?? BagIcon
           return (
             <label key={role} className={`role-card${value === role ? ' is-selected' : ''}`}>
               <input type="radio" name="role" value={role} checked={value === role} onChange={() => onChange(role)} className="sr-only" />
@@ -20,7 +18,7 @@ export default function RolePicker({ value, onChange, withAdmin = true }) {
               </span>
               <span className="role-text">
                 <strong>{name}</strong>
-                <span>{text}</span>
+                {text && <span>{text}</span>}
               </span>
             </label>
           )

@@ -38,17 +38,14 @@ const draftsFrom = (report) =>
 function NeedSeller() {
   const auth = useAuth()
   const navigate = useNavigate()
-  const holds = auth.loggedIn && auth.user.roles.some((r) => r.role === 'seller' && r.status === 'active')
   return (
     <div className="dash-card empty empty-center">
       <p className="lede">
-        {holds ? 'You are logged in as another role. Switch to your seller role to publish.' : 'Log in as a seller to publish these materials to the marketplace.'}
+        {auth.loggedIn
+          ? `Your ${auth.roleName} account cannot publish listings. Selling needs a seller account; only a Scan4Reuse admin can change an account's role.`
+          : 'Log in as a seller to publish these materials to the marketplace.'}
       </p>
-      {holds ? (
-        <button type="button" className="btn btn-primary" onClick={() => auth.switchRole('seller')}>
-          Switch to seller
-        </button>
-      ) : (
+      {!auth.loggedIn && (
         <button type="button" className="btn btn-primary" onClick={() => navigate('/login?role=seller&next=/sell')}>
           Log in as a seller
         </button>
@@ -61,7 +58,7 @@ function NeedSeller() {
 export default function SellFromScan({ report, scanId, title, onBack }) {
   const auth = useAuth()
   const navigate = useNavigate()
-  const isSeller = auth.loggedIn && auth.role === 'seller'
+  const isSeller = auth.loggedIn && auth.role === 'seller' && auth.can('market.sell')
   const [drafts, setDrafts] = useState(() => draftsFrom(report))
   const [place, setPlace] = useState(null)
   const [saveDefault, setSaveDefault] = useState(true)

@@ -34,8 +34,10 @@ Run it, then either:
 ## Accounts and dashboards (logistics branch)
 
 Scan4Reuse is **scan → marketplace → logistics**, used by five roles: buyer, corporate buyer, seller, logistics
-company and admin. Everyone logs in on the same page (`#/login`), picks their role there, and lands on that role's
-dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
+company and admin. Everyone logs in on the same page (`#/login`) with an email and a password and lands on their
+role's dashboard (`#/dashboard`): a sidebar on desktops, an icon rail on tablets, a floating tab bar on phones. The
+dashboards use a soft (neumorphic) look in the brand green with gentle motion, which is switched off for people who
+ask their system for reduced motion.
 
 | Role | Dashboard pages |
 | --- | --- |
@@ -43,11 +45,13 @@ dashboard (`#/dashboard`): a sidebar on wide screens, a tab bar on phones.
 | Corporate buyer | Overview, Tenders, Orders, Account |
 | Seller | Overview, Listings (edit price and stock, publish, withdraw), Orders, Tenders, Pickup & partners, Balance & payouts, Account |
 | Logistics company | Sent straight to the [logistics app](https://github.com/Reazul-Islam-Fahim/Scan4Resource-logistics-frontend), already logged in |
-| Admin | Overview (sales, commission, orders, CO₂ saved, users, last six months), Verification (approve corporate buyers and logistics companies), Users (add admins), Listings (withdraw), Orders (cancel and refund before pickup), Tenders, Payments & payouts, Ledger (every credit and payout), Commission (rates with history), Logs (everything every role and both APIs did, refused requests and errors; search and filters, live), Account |
+| Admin | Overview (sales, commission, orders, CO₂ saved, users, last six months), Verification (approve corporate buyers and logistics companies), Users (add accounts, change a user's role), Roles (create, edit and delete roles, tick each role's permissions), Listings (withdraw), Orders (cancel and refund before pickup), Tenders, Payments & payouts, Ledger (every credit and payout), Commission (rates with history), Logs (everything every role and both APIs did, refused requests and errors; search, filters, a time range, pages, live), Account |
 
 `#/signup` creates buyer, seller, corporate buyer and logistics company accounts; the last two wait for an admin
-to verify the company. One account can hold several roles (add them under Account, then switch). Admins are
-created with the backend's `scripts/create_admin.py`, then by other admins. Logging in needs the backend.
+to verify the company. The role is picked at sign-up and **only an admin can change it** (Users page). Admins can
+also make their own roles: each has a kind (one of the five above, which picks the dashboard) and permissions
+(which pages and actions it gets), and choose which roles sign-up offers. Admins are created with the backend's
+`scripts/create_admin.py`, then by other admins. Logging in needs the backend.
 
 Set `VITE_LOGISTICS_URL` (locally `http://localhost:5174`) so logistics companies are sent to the logistics app,
 which in turn sends people here to log in (`#/login?app=logistics&next=...`) and gets the login back.
@@ -215,5 +219,5 @@ The app uses hash routes (`#/report`), so no rewrite rules are needed.
 | `src/lib/pdf.js` | The PDF (`jspdf`, loaded only on export) |
 | `src/lib/api.js`, `mock.js`, `session.js` | Network calls, demo mode, merging detections |
 | `src/lib/auth.js`, `src/hooks/useAuth.jsx` | Login, sign-up, roles, the stored token, admin calls |
-| `src/components/auth/` | The shared login page with the role picker, and sign-up |
+| `src/components/auth/` | The shared login page, and sign-up with the role picker |
 | `src/components/dashboard/` | The dashboard frame and each role's pages (`roles.jsx` lists them) |
