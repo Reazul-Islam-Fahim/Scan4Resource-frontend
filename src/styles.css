@@ -4073,3 +4073,57 @@ a.btn {
     animation-delay: 0.1s;
   }
 }
+
+/* The side menu always fits the window: on short screens the page list scrolls inside it and Log out stays
+   pinned at the bottom (before, it spilled below the menu onto the page). */
+@media (min-width: 760px) {
+  .dash .dash-side {
+    overflow: hidden;
+  }
+
+  .dash .dash-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: start;
+    margin: -6px -8px;
+    padding: 6px 8px; /* room for the pressed-in shadow of the open page */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(150, 181, 168, 0.6) transparent;
+  }
+
+  .dash .dash-logout {
+    flex: none;
+    margin-top: 0;
+  }
+
+  .dash .dash-nav + .dash-logout {
+    position: relative;
+  }
+
+  .dash .dash-nav + .dash-logout::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: rgba(150, 181, 168, 0.35);
+  }
+}
+
+@media (min-width: 960px) and (max-height: 820px) {
+  .dash .dash-side {
+    gap: 14px;
+    padding-block: 18px;
+  }
+
+  .dash .dash-nav {
+    gap: 2px;
+  }
+
+  .dash .dash-link {
+    padding-block: 8px;
+  }
+}
