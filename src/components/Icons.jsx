@@ -141,3 +141,20 @@ export const KeyIcon = make(
     <path d="M11 12l8-8M16 7l2.5 2.5M14 9l2 2" />
   </>,
 )
+export const CoinIcon = make(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M14.5 9.5c-.5-1-1.4-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.2 0-2.1-.5-2.6-1.5M12 6.5V8M12 16v1.5" />
+  </>,
+)
+export const PercentIcon = make(
+  <>
+    <path d="M6 18L18 6" />
+    <circle cx="7.5" cy="7.5" r="2.5" />
+    <circle cx="16.5" cy="16.5" r="2.5" />
+  </>,
+)
+export const InboxIcon = make(<path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 3h6l1-3h5" />)
+export const ArrowUpIcon = make(<path d="M6 14l6-6 6 6" />)
+export const ArrowDownIcon = make(<path d="M6 10l6 6 6-6" />)
+export const DoorIcon = make(<path d="M6 21V4h12v17M3 21h18M14.5 12.5v.01" />)

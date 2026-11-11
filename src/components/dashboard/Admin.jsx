@@ -15,6 +15,8 @@ import {
 } from '../../lib/auth'
 import { passwordProblem } from '../../lib/validation'
 import { formatDate } from './format'
+import { EmptyState, ListSkeleton } from './kit'
+import { ShieldIcon } from '../Icons'
 
 function useAdminData(load) {
   const { token } = useAuth()
@@ -60,7 +62,8 @@ export function AdminVerification() {
         <p className="lede">Corporate buyers and logistics companies trade only after you verify their company.</p>
       </header>
       {(error || failure) && <p className="error">{error || failure}</p>}
-      {data && pending.length === 0 && <p className="dash-card note">Nobody is waiting for verification.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && pending.length === 0 && <EmptyState icon={ShieldIcon} title="Nobody is waiting" text="New corporate buyers and logistics companies show up here after they sign up." />}
       {pending.map(({ user, r }) => {
         const key = `${user.id}:${r.role}`
         return (

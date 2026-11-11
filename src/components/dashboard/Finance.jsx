@@ -5,6 +5,8 @@ import { roleName } from '../../lib/auth'
 import { decidePayout, fetchEarnings, fetchFinance, fetchPayouts, requestPayout } from '../../lib/financeApi'
 import { formatMoney } from '../../lib/format'
 import { formatDate } from './format'
+import { EmptyState, ListSkeleton } from './kit'
+import { WalletIcon } from '../Icons'
 
 // Money pages: a seller's balance and payouts, and the admin's commission and payout approvals.
 
@@ -204,7 +206,8 @@ export function AdminPayouts() {
       )}
 
       <h2 className="section-title">Waiting for approval</h2>
-      {data && waiting.length === 0 && <p className="dash-card note">No payout requests.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && waiting.length === 0 && <EmptyState icon={WalletIcon} title="No payout requests" text="Sellers and logistics companies request payouts from their balance; they wait here for you." />}
       {waiting.map((p) => (
         <article key={p.id} className="dash-card verify-card">
           <div className="verify-head">
