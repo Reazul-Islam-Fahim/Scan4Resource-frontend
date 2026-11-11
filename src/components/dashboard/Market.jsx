@@ -21,6 +21,8 @@ import AddressField from '../AddressField'
 import MaterialImage from '../MaterialImage'
 import PartnerPicker from '../sell/PartnerPicker'
 import { formatDate } from './format'
+import { EmptyState, ListSkeleton } from './kit'
+import { BagIcon, ShopIcon } from '../Icons'
 
 // The marketplace pages of the dashboards: a seller's listings, sales and partners; a buyer's orders.
 
@@ -135,10 +137,13 @@ export function SellerListings() {
       </header>
       {notice && <p className="ok-box">{notice}</p>}
       {error && <p className="error">{error}</p>}
+      {!data && !error && <ListSkeleton />}
       {data && data.length === 0 && (
-        <p className="dash-card note">
-          No listings yet. Open a scan report and choose <strong>Sell on the marketplace</strong>.
-        </p>
+        <EmptyState icon={ShopIcon} title="No listings yet" text="Scan a building, open its report and choose Sell on the marketplace.">
+          <Link to="/scan" className="btn btn-primary btn-sm">
+            Start a scan
+          </Link>
+        </EmptyState>
       )}
       {(data ?? []).map((listing) => (
         <ListingRow key={`${listing.id}:${listing.updated_at}`} listing={listing} token={token} onChanged={reload} />
@@ -212,7 +217,8 @@ export function SellerSales() {
         <p className="lede">What buyers ordered from you. Once delivery is booked and paid, the logistics company picks up; you are credited when it is delivered.</p>
       </header>
       {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No orders yet. They appear here as soon as someone buys.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && <EmptyState icon={BagIcon} title="No orders yet" text="They appear here as soon as someone buys your materials." />}
       {(data ?? []).map((order) => (
         <OrderCard key={order.id} order={order} showBuyer />
       ))}
@@ -246,7 +252,14 @@ export function BuyerOrders() {
       </header>
       {placed && <p className="ok-box">Order placed. The materials are reserved for you.</p>}
       {(error || failure) && <p className="error">{error || failure}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No orders yet.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && (
+        <EmptyState icon={BagIcon} title="No orders yet" text="When you order materials, you can follow their delivery here.">
+          <Link to="/market" className="btn btn-primary btn-sm">
+            Browse the marketplace
+          </Link>
+        </EmptyState>
+      )}
       {(data ?? []).map((order) => (
         <OrderCard key={order.id} order={order}>
           <div className="row-actions">

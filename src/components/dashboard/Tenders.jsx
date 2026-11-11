@@ -22,6 +22,8 @@ import {
 } from '../../lib/tenderApi'
 import AddressField from '../AddressField'
 import { formatDate } from './format'
+import { EmptyState, ListSkeleton } from './kit'
+import { DocIcon } from '../Icons'
 
 // Corporate tenders: the corporate buyer asks for bulk quantities, sellers bid, the buyer awards bids, and each
 // awarded bid becomes an order that is delivered and paid like any other.
@@ -322,7 +324,7 @@ function TenderDetail({ tenderId, onBack, admin }) {
   })
 
   if (error) return <p className="error">{error}</p>
-  if (!tender) return <p className="note">Loading the tender…</p>
+  if (!tender) return <ListSkeleton rows={2} />
   if (editing) return <TenderForm initial={tender} onSaved={() => { setEditing(false); load() }} onCancel={() => setEditing(false)} />
 
   const standing = tender.bids.filter((b) => b.status === 'submitted')
@@ -484,7 +486,8 @@ export function CorporateTenders() {
         />
       )}
       {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && !creating && <p className="dash-card note">No tenders yet. Start one with the materials, quantities and delivery site you need.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && !creating && <EmptyState icon={DocIcon} title="No tenders yet" text="Start one with the materials, quantities and delivery site you need; sellers nearby bid." />}
       {(data ?? []).map((tender) => (
         <TenderRow key={tender.id} tender={tender} onOpen={() => show(tender.id)} />
       ))}
@@ -611,7 +614,7 @@ function SellerTenderDetail({ tenderId, onBack }) {
   }, [token, tenderId])
 
   if (error) return <p className="error">{error}</p>
-  if (!tender) return <p className="note">Loading the tender…</p>
+  if (!tender) return <ListSkeleton rows={2} />
   const bid = tender.my_bid
   return (
     <section className="dash-section">
@@ -673,7 +676,8 @@ export function SellerTenders() {
         <p className="lede">Companies asking for bulk quantities. You are invited when your listings match and your pickup is near the site; any seller may bid.</p>
       </header>
       {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No open tenders right now. New ones appear here.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && <EmptyState icon={DocIcon} title="No open tenders right now" text="Companies post bulk requests here; the ones near your pickup invite you." />}
       {(data ?? []).map((tender) => (
         <TenderRow
           key={tender.id}
@@ -706,7 +710,8 @@ export function AdminTenders() {
         <p className="lede">Every corporate tender, its bids and awards. Take down a tender that breaks the rules; the buyer and bidders see it was cancelled.</p>
       </header>
       {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No tenders yet.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && <EmptyState icon={DocIcon} title="No tenders yet" text="Tenders appear when corporate buyers publish them." />}
       {(data ?? []).map((tender) => (
         <TenderRow key={tender.id} tender={tender} onOpen={() => show(tender.id)} extra={<span className="note">{tender.buyer_name}</span>} />
       ))}

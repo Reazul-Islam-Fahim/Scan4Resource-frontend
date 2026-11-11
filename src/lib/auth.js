@@ -87,3 +87,5 @@ export const hasLogisticsApp = () => LOGISTICS_URL !== ''
 // The numbers on the dashboard menu, and telling the backend a page was opened (its "new" count starts again).
 export const fetchAttention = (token) => request('/me/attention', authed(token))
 export const markSeen = (token, page) => request('/me/seen', json({ page }, token))
+// CO2 that reuse saved for this login: by buying, selling, transporting, or the whole platform for admins
+export const fetchImpact = (token) => request('/me/impact', authed(token))

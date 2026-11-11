@@ -3,6 +3,8 @@ import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
 import { roleName } from '../../lib/auth'
 import { fetchLogs } from '../../lib/adminApi'
+import { ClockIcon } from '../Icons'
+import { EmptyState, ListSkeleton } from './kit'
 
 // Everything that happened on the platform, from both APIs: who did what, when, and whether it worked.
 
@@ -325,7 +327,8 @@ export function AdminLogs() {
       {!state.reachable && <p className="warn-box">The logistics API cannot be reached, so its lines are missing. Showing Scan4Reuse only.</p>}
       {state.error && !badRange && <p className="error">{state.error}</p>}
       <Pager page={page} pages={state.pages} total={state.total} perPage={perPage} busy={state.busy} onPage={goTo} onPerPage={setPerPage} />
-      {state.lines && state.lines.length === 0 && <p className="dash-card note">Nothing matches.</p>}
+      {!state.lines && !state.error && <ListSkeleton rows={5} />}
+      {state.lines && state.lines.length === 0 && <EmptyState icon={ClockIcon} title="Nothing matches" text="Try another level, source or time range." />}
       {state.lines && state.lines.length > 0 && (
         <ul className={`dash-card log-list${state.busy ? ' is-loading' : ''}`} key={`${page}-${perPage}`}>
           {state.lines.map((line) => (

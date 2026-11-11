@@ -48,7 +48,8 @@ export async function request(path, options = {}, timeoutMs = 10000) {
     }
     const method = (options.method || 'GET').toUpperCase()
     if (method !== 'GET' && !path.startsWith('/me/') && typeof window !== 'undefined') {
-      window.dispatchEvent(new Event(CHANGED)) // something changed: the menu's numbers may have too
+      // something changed: the menu's numbers may have too, and the dashboard confirms it with a short note
+      window.dispatchEvent(new CustomEvent(CHANGED, { detail: { method, path } }))
     }
     if (response.status === 204) return null
     return await response.json()

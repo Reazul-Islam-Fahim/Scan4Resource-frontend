@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import useAuth from '../../hooks/useAuth'
 import { describeError } from '../../lib/api'
 import { roleName } from '../../lib/auth'
-import { cancelAdminOrder, fetchAdminListings, fetchAdminOrders, fetchAnalytics, fetchCommission, fetchLedger, saveCommission } from '../../lib/adminApi'
+import { cancelAdminOrder, fetchAdminListings, fetchAdminOrders, fetchAnalytics, fetchCommission, fetchLedger, fetchLogs, saveCommission } from '../../lib/adminApi'
 import { formatMoney, formatPrice, formatTonnes } from '../../lib/format'
 import { withdrawListing } from '../../lib/marketApi'
+import { BagIcon, ClockIcon, CoinIcon, DocIcon, InboxIcon, PercentIcon, ShieldIcon, ShopIcon, TruckIcon, WalletIcon } from '../Icons'
 import MaterialImage from '../MaterialImage'
+import { useWaiting } from './attention'
+import { AreaChart, Bars, Co2Card, Donut, EmptyState, greeting, ListSkeleton, OverviewSkeleton, PageHead, Panel, PanelLink, StatCard, TodoRow, Trend, useData } from './kit'
 import { formatDate } from './format'
 import { LISTING_STATUS, ORDER_STATUS, OrderCard, Pill } from './Market'
 
@@ -47,126 +50,132 @@ function StatusChips({ labels, value, onChange }) {
   )
 }
 
-const MONTH = new Intl.DateTimeFormat('en-CH', { month: 'short' })
-const monthLabel = (ym) => MONTH.format(new Date(`${ym}-01T00:00:00`))
+const ROLE_ORDER = ['buyer', 'corporate', 'seller', 'logistics', 'admin']
+const ROLE_COLORS = { buyer: '#018058', corporate: '#5fb594', seller: '#0b4f3b', logistics: '#c08a2b', admin: '#9bb3aa' }
+const ORDER_BARS = { awaiting_delivery: 'Not booked', delivery_booked: 'Booked', delivered: 'Delivered', cancelled: 'Cancelled' }
 
-/** Paid by buyers per month: one series, so one green and no legend; hover or focus a bar for its figures. */
-function MonthlyChart({ months }) {
-  const [active, setActive] = useState(months.length - 1)
-  const top = Math.max(...months.map((m) => m.paid_chf), 1)
-  const shown = months[active]
+const lastTwo = (series) => ({ now: series[series.length - 1], before: series[series.length - 2] })
+const stamp = (iso) => new Date(iso).toLocaleString('en-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const loadActivity = (token) => fetchLogs(token, { per_page: 6 })
+
+function Activity() {
+  const { data, error } = useData(loadActivity)
   return (
-    <div className="dash-card month-chart">
-      <div className="verify-head">
-        <h2 className="section-title">Paid by buyers, last six months</h2>
-      </div>
-      <p className="month-readout" aria-live="polite">
-        <strong>{formatMoney(shown.paid_chf)}</strong>
-        <span className="note">
-          {monthLabel(shown.month)} · {shown.orders} order{shown.orders === 1 ? '' : 's'} placed · {shown.delivered} delivered
-        </span>
-      </p>
-      <div className="month-bars">
-        {months.map((m, i) => (
-          <button
-            key={m.month}
-            type="button"
-            className="month-col"
-            aria-pressed={i === active}
-            aria-label={`${monthLabel(m.month)}: ${formatMoney(m.paid_chf)}`}
-            onMouseEnter={() => setActive(i)}
-            onFocus={() => setActive(i)}
-            onClick={() => setActive(i)}
-          >
-            <span className="month-track">
-              <span className="month-bar" style={{ height: `${m.paid_chf > 0 ? Math.max((m.paid_chf / top) * 100, 3) : 0}%` }} />
-            </span>
-            <span className="month-name">{monthLabel(m.month)}</span>
-          </button>
-        ))}
-      </div>
-    </div>
+    <Panel title="Latest activity" action={<PanelLink to="/dashboard/logs">All logs</PanelLink>}>
+      {error && <p className="error">{error}</p>}
+      {data === undefined && <ListSkeleton rows={4} bare />}
+      {data && data.lines.length === 0 && <EmptyState icon={ClockIcon} title="Nothing happened yet" text="Sign-ups, orders and payouts show up here." />}
+      {data && data.lines.length > 0 && (
+        <div className="ds-list">
+          {data.lines.slice(0, 6).map((line, i) => (
+            <div key={`${line.at}-${i}`} className="ds-todo">
+              <span className="ds-well">
+                <ClockIcon width={17} height={17} />
+              </span>
+              <span className="ds-todo-text">
+                <strong>{line.text}</strong>
+                <span className="note">
+                  {line.actor_name || 'Service'} · {stamp(line.at)}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
   )
 }
 
-const ROLE_ORDER = ['buyer', 'corporate', 'seller', 'logistics', 'admin']
-const TENDER_STATUS = { draft: 'Drafts', open: 'Open', closed: 'Closed', awarded: 'Awarded', cancelled: 'Cancelled' }
-
 export function AdminInsights() {
-  const { data, error } = useLoad(fetchAnalytics)
-  const { data: rates } = useLoad(fetchCommission)
-  const pending = data ? Object.values(data.users).reduce((sum, r) => sum + (r.pending || 0), 0) : 0
+  const { user, can } = useAuth()
+  const waiting = useWaiting().pages
+  const { data, error } = useData(fetchAnalytics)
+  const { data: rates } = useData(fetchCommission)
+  const lede = rates
+    ? `Scan4Reuse keeps ${rates.seller_pct}% from each sale and ${rates.logistics_pct}% from each delivery.`
+    : 'Sales, deliveries and the CO₂ that reuse saved.'
+  const head = <PageHead title={`${greeting()}, ${user.name.split(' ')[0]}`} lede={lede} />
+  if (!data) {
+    return (
+      <section className="dash-section">
+        {head}
+        {error ? <p className="error">{error}</p> : <OverviewSkeleton />}
+      </section>
+    )
+  }
+  const months = data.months
+  const series = (key) => months.map((m) => m[key])
+  const pendingUsers = Object.values(data.users).reduce((sum, r) => sum + (r.pending || 0), 0)
+  const people = ROLE_ORDER.filter((r) => data.users[r]).map((r) => ({
+    key: r,
+    label: roleName(r),
+    value: data.users[r].active || 0,
+    pending: data.users[r].pending || 0,
+    color: ROLE_COLORS[r],
+  }))
+  const notBooked = data.orders_by_status.awaiting_delivery || 0
+  const toAward = data.tenders_by_status.closed || 0
+  const todos = [
+    waiting.verification > 0 && { icon: ShieldIcon, title: `${waiting.verification} account${waiting.verification > 1 ? 's' : ''} to verify`, text: 'Companies wait before they can trade', to: '/dashboard/verification' },
+    waiting.payouts > 0 && { icon: WalletIcon, title: `${waiting.payouts} payout request${waiting.payouts > 1 ? 's' : ''}`, text: 'Approve and pay, or reject', to: '/dashboard/payouts' },
+    notBooked > 0 && can('admin.market') && { icon: TruckIcon, title: `${notBooked} order${notBooked > 1 ? 's' : ''} without a carrier`, text: 'No logistics company has accepted yet', to: '/dashboard/orders' },
+    toAward > 0 && can('admin.market') && { icon: DocIcon, title: `${toAward} tender${toAward > 1 ? 's' : ''} waiting to be awarded`, text: 'Closed for bids', to: '/dashboard/tenders' },
+  ].filter(Boolean)
+  const impact = { scope: 'platform', co2_saved_kg: data.co2_saved_kg, reused_kg: data.reused_kg, months: months.map((m) => ({ month: m.month, co2_kg: m.co2_kg })) }
   return (
     <section className="dash-section">
-      <header>
-        <h1 className="dash-title">Platform overview</h1>
-        <p className="lede">
-          {rates
-            ? `Scan4Reuse keeps ${rates.seller_pct}% from each sale and ${rates.logistics_pct}% from each delivery.`
-            : 'Sales, deliveries and the CO₂ that reuse saved.'}
-        </p>
-      </header>
-      {error && <p className="error">{error}</p>}
-      {data && (
-        <>
-          <div className="dash-stats">
-            <Stat label="Paid by buyers" value={formatMoney(data.gmv_chf)} note={`${formatMoney(data.goods_chf)} materials · ${formatMoney(data.delivery_chf)} delivery`} />
-            <Stat label="Commission earned" value={formatMoney(data.commission_chf)} note="Credited on delivery" />
-            <Stat label="Orders" value={data.orders} note={`${data.deliveries} delivered`} />
-            <Stat label="CO₂ saved" value={formatTonnes(data.co2_saved_kg)} note={`${formatTonnes(data.reused_kg)} of materials reused`} />
-            <Stat label="Live listings" value={data.listings_live} note={`${data.listings} published so far`} />
-            <Stat label="Refunded" value={formatMoney(data.refunded_chf)} />
+      {head}
+      <div className="ds-stats">
+        <StatCard icon={CoinIcon} label="Paid by buyers" value={formatMoney(data.gmv_chf)} spark={series('paid_chf')} trend={<Trend {...lastTwo(series('paid_chf'))} />} note={`${formatMoney(data.delivery_chf)} delivery`} />
+        <StatCard icon={PercentIcon} label="Commission earned" value={formatMoney(data.commission_chf)} spark={series('commission_chf')} trend={<Trend {...lastTwo(series('commission_chf'))} />} note="on delivery" to={can('admin.finance') ? '/dashboard/ledger' : undefined} />
+        <StatCard icon={BagIcon} label="Orders" value={data.orders} spark={series('orders')} trend={<Trend {...lastTwo(series('orders'))} />} note={`${data.deliveries} delivered`} to={can('admin.market') ? '/dashboard/orders' : undefined} />
+        <StatCard icon={ShopIcon} label="Live listings" value={data.listings_live} note={`${data.listings} published so far`} to={can('admin.market') ? '/dashboard/listings' : undefined} />
+      </div>
+      <Co2Card impact={impact} scope="platform" />
+      <div className="ds-row ds-row-2">
+        <Panel title="Paid by buyers" sub="Last six months, materials and delivery">
+          <AreaChart months={months} value={(m) => m.paid_chf} format={formatMoney} detail={(m) => `${m.orders} order${m.orders === 1 ? '' : 's'}`} />
+        </Panel>
+        <Panel title="Needs your attention" count={todos.length}>
+          <div className="ds-list">
+            {todos.length ? todos.map((t) => <TodoRow key={t.title} {...t} />) : <TodoRow icon={InboxIcon} title="You are all caught up" text="Verifications and payout requests show up here" done />}
+            {data.refunded_chf > 0 && <TodoRow icon={CoinIcon} title={`${formatMoney(data.refunded_chf)} refunded`} text="To buyers of cancelled orders" to={can('admin.finance') ? '/dashboard/ledger' : undefined} />}
           </div>
-          <MonthlyChart months={data.months} />
-          <div className="console-split">
-            <div className="dash-card">
-              <h2 className="section-title">People</h2>
-              <table className="dash-table">
-                <thead>
-                  <tr>
-                    <th>Role</th>
-                    <th className="num">Active</th>
-                    <th className="num">Waiting</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ROLE_ORDER.filter((r) => data.users[r]).map((r) => (
-                    <tr key={r}>
-                      <td>{roleName(r)}</td>
-                      <td className="num">{data.users[r].active || 0}</td>
-                      <td className="num">{data.users[r].pending || 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {pending > 0 && <p className="note">{pending} waiting for verification.</p>}
-            </div>
-            <div className="dash-card">
-              <h2 className="section-title">Orders and tenders</h2>
-              <table className="dash-table">
-                <tbody>
-                  {Object.entries(ORDER_STATUS).map(([key, label]) => (
-                    <tr key={key}>
-                      <td>{label}</td>
-                      <td className="num">{data.orders_by_status[key] || 0}</td>
-                    </tr>
-                  ))}
-                  {Object.entries(TENDER_STATUS).map(([key, label]) => (
-                    <tr key={key}>
-                      <td>Tenders: {label.toLowerCase()}</td>
-                      <td className="num">{data.tenders_by_status[key] || 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        </Panel>
+      </div>
+      <div className="ds-row ds-row-3">
+        <Panel title="People" sub={pendingUsers ? `${pendingUsers} waiting for verification` : 'Active accounts by role'} action={can('admin.users') && <PanelLink to="/dashboard/users">Users</PanelLink>}>
+          <div className="ds-ring-row">
+            <Donut parts={people} label="active" />
+            <ul className="ds-legend">
+              {people.map((p) => (
+                <li key={p.key}>
+                  <span className="ds-dot" style={{ background: p.color }} />
+                  <span>{p.label}</span>
+                  <b>{p.value}</b>
+                </li>
+              ))}
+            </ul>
           </div>
-          <p className="note">
-            CO₂ saved is what making the delivered materials new would have emitted, from the Swiss KBOB data (production). Materials without a weight count with a typical weight
-            for their kind.
-          </p>
-        </>
-      )}
+        </Panel>
+        <Panel title="Orders by status" sub={`${Object.values(data.tenders_by_status).reduce((a, b) => a + b, 0)} tenders · ${data.tenders_by_status.open || 0} open`}>
+          <Bars items={Object.entries(ORDER_BARS).map(([key, label]) => ({ label, value: data.orders_by_status[key] || 0 }))} format={(v) => String(v)} />
+        </Panel>
+        {can('admin.logs') ? (
+          <Activity />
+        ) : (
+          <Panel title="Materials reused">
+            <p className="ds-chart-sum">
+              <strong>{formatTonnes(data.reused_kg)}</strong>
+            </p>
+            <p className="note">Delivered for reuse instead of being thrown away.</p>
+          </Panel>
+        )}
+      </div>
+      <p className="note">
+        CO₂ saved is what making the delivered materials new would have emitted, from the Swiss KBOB data (production). Materials without a weight count with a typical weight
+        for their kind.
+      </p>
     </section>
   )
 }
@@ -204,7 +213,8 @@ export function AdminOrders() {
       <StatusChips labels={ORDER_STATUS} value={status} onChange={setStatus} />
       {(error || state.error) && <p className="error">{error || state.error}</p>}
       {state.message && <p className="ok-box">{state.message}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No orders here.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && <EmptyState icon={BagIcon} title="No orders here" text={status ? 'Try another status.' : 'Orders appear as soon as a buyer checks out.'} />}
       {(data ?? []).map((order) => (
         <OrderCard key={order.id} order={order} showBuyer full>
           <p className="note mono">{order.id}</p>
@@ -272,7 +282,8 @@ export function AdminListings() {
       </header>
       <StatusChips labels={LISTING_STATUS} value={status} onChange={setStatus} />
       {(error || failure) && <p className="error">{error || failure}</p>}
-      {data && data.length === 0 && <p className="dash-card note">No listings here.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && <EmptyState icon={ShopIcon} title="No listings here" text={status ? 'Try another status.' : 'Listings appear when sellers publish items from their scans.'} />}
       {(data ?? []).map((listing) => (
         <article key={listing.id} className="dash-card listing-row">
           <MaterialImage kind={listing.category} src={listing.image} alt="" className="editor-thumb" />
@@ -411,7 +422,8 @@ export function AdminLedger() {
         <p className="lede">Every credit to a seller or logistics company and every payout, newest first. Commission is the fee column.</p>
       </header>
       {error && <p className="error">{error}</p>}
-      {data && data.length === 0 && <p className="dash-card note">Nothing yet. Lines appear when a paid order is delivered.</p>}
+      {!data && !error && <ListSkeleton />}
+      {data && data.length === 0 && <EmptyState icon={CoinIcon} title="The ledger is empty" text="Lines appear when a paid order is delivered." />}
       {data && data.length > 0 && (
         <div className="dash-card table-wrap">
           <table className="dash-table ledger table-cards">
