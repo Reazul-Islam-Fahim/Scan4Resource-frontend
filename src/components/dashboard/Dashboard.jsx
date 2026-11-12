@@ -76,9 +76,7 @@ export default function Dashboard() {
     <div className={`dash${collapsed ? ' is-collapsed' : ''}`}>
       <aside className="dash-side">
         <div className="dash-menu-head">
-          <NavLink to="/" className="wordmark dash-wordmark">
-            scan4reuse
-          </NavLink>
+          <span className="wordmark dash-wordmark">scan4reuse</span>
           <button
             type="button"
             className="dash-toggle"
