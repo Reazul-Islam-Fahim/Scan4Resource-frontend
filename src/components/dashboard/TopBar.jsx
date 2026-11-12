@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { logisticsUrl } from '../../lib/auth'
-import { BellIcon, HomeIcon, LogoutIcon, MapIcon, PlusIcon, ReportIcon, ScanIcon, SearchIcon, ShopIcon, TruckIcon } from '../Icons'
+import { BellIcon, LogoutIcon, MapIcon, PlusIcon, ReportIcon, ScanIcon, SearchIcon, ShopIcon, TruckIcon } from '../Icons'
 
 // The bar above every dashboard page: where you are, a search that jumps to any page or action (Ctrl K),
 // what waits for you (the bell) and your account.
@@ -26,7 +26,7 @@ const initials = (name) =>
 /** Shortcuts besides the pages, by what the person can do. */
 function actionsFor(auth) {
   const can = (perm) => auth.can?.(perm) ?? true
-  const list = [{ key: 'home', label: 'Scan4Reuse home', icon: HomeIcon, to: '/', words: 'start' }]
+  const list = []
   if (auth.role === 'seller' && can('market.sell')) {
     list.push({ key: 'scan', label: 'Start a scan', icon: ScanIcon, to: '/scan', words: 'camera photo video new' })
     list.push({ key: 'scans', label: 'My scans', icon: ReportIcon, to: '/scans', words: 'report' })
@@ -46,11 +46,26 @@ function actionsFor(auth) {
   return list
 }
 
+/** The label with the typed letters underlined. */
+function Marked({ text, query }) {
+  const q = query.trim().toLowerCase()
+  const at = q ? text.toLowerCase().indexOf(q) : -1
+  if (at < 0) return text
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark>{text.slice(at, at + q.length)}</mark>
+      {text.slice(at + q.length)}
+    </>
+  )
+}
+
 function Palette({ pages, attention, auth, onClose, onLogout }) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [at, setAt] = useState(0)
   const input = useRef(null)
+  const list = useRef(null)
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
     const match = (item) => !q || `${item.label} ${item.words ?? ''}`.toLowerCase().includes(q)
@@ -70,6 +85,15 @@ function Palette({ pages, attention, auth, onClose, onLogout }) {
 
   useEffect(() => input.current?.focus(), [])
   useEffect(() => setAt(0), [query])
+  // While the search is open only its list scrolls, never the page behind it.
+  useEffect(() => {
+    document.documentElement.classList.add('ds-locked')
+    return () => document.documentElement.classList.remove('ds-locked')
+  }, [])
+  // Keep the highlighted row in view when moving with the arrow keys.
+  useEffect(() => {
+    list.current?.querySelector('.ds-palette-item.is-on')?.scrollIntoView({ block: 'nearest' })
+  }, [at, query])
 
   const go = (item) => {
     onClose()
@@ -109,8 +133,11 @@ function Palette({ pages, attention, auth, onClose, onLogout }) {
             aria-activedescendant={flat[at] ? `ds-pal-${flat[at].key}` : undefined}
           />
           <kbd>Esc</kbd>
+          <button type="button" className="ds-palette-cancel" onClick={onClose}>
+            Cancel
+          </button>
         </label>
-        <div id="ds-palette-list" role="listbox" className="ds-palette-list">
+        <div id="ds-palette-list" role="listbox" className="ds-palette-list" ref={list}>
           {groups.map(([name, items]) => (
             <div key={name} role="group" aria-label={name}>
               <p className="ds-palette-group">{name}</p>
@@ -126,18 +153,44 @@ function Palette({ pages, attention, auth, onClose, onLogout }) {
                     role="option"
                     aria-selected={mine === at}
                     className={`ds-palette-item${mine === at ? ' is-on' : ''}`}
-                    onMouseEnter={() => setAt(mine)}
+                    onMouseMove={() => mine !== at && setAt(mine)}
                     onClick={() => go(item)}
                   >
-                    <Icon width={19} height={19} />
-                    <span>{item.label}</span>
-                    {item.hint && <span className="note">{item.hint}</span>}
+                    <span className="ds-palette-well">
+                      <Icon width={17} height={17} />
+                    </span>
+                    <span className="ds-palette-label">
+                      <Marked text={item.label} query={query} />
+                    </span>
+                    {item.hint && <span className="ds-palette-pill">{item.hint}</span>}
+                    {mine === at && (
+                      <span className="ds-palette-enter" aria-hidden="true">
+                        ↵ Open
+                      </span>
+                    )}
                   </button>
                 )
               })}
             </div>
           ))}
-          {flat.length === 0 && <p className="ds-palette-none note">Nothing matches “{query}”.</p>}
+          {flat.length === 0 && (
+            <div className="ds-palette-none">
+              <strong>Nothing matches “{query.trim()}”</strong>
+              <span>Try a page name like {pages.find((p) => p.path === 'orders') ? 'Orders' : pages[0]?.label} or Account.</span>
+            </div>
+          )}
+        </div>
+        <div className="ds-palette-foot" aria-hidden="true">
+          <span>
+            <kbd>↑</kbd>
+            <kbd>↓</kbd>move
+          </span>
+          <span>
+            <kbd>↵</kbd>open
+          </span>
+          <span className="ds-palette-foot-end">
+            <kbd>Esc</kbd>close
+          </span>
         </div>
       </div>
     </div>
