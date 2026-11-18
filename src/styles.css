@@ -2793,6 +2793,31 @@ button:disabled {
   gap: 10px;
 }
 
+.sell-size {
+  grid-column: span 2;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.sell-size-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sell-stack {
+  align-self: end;
+  padding-bottom: 10px;
+}
+
+@media (max-width: 420px) {
+  .sell-size {
+    grid-column: auto;
+  }
+}
+
 .sell-total {
   display: flex;
   flex-wrap: wrap;

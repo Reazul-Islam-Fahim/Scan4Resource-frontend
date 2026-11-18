@@ -40,7 +40,8 @@ function useLoad(load) {
 
 export const LISTING_STATUS = { draft: 'Draft', active: 'Published', sold: 'Sold out', withdrawn: 'Withdrawn' }
 export const ORDER_STATUS = { awaiting_delivery: 'Delivery not booked yet', delivery_booked: 'Delivery booked', delivered: 'Delivered', cancelled: 'Cancelled' }
-const needsAction = (order) => order.status === 'awaiting_delivery' || (order.status !== 'cancelled' && order.payment?.status !== 'paid')
+const needsAction = (order) =>
+  order.status === 'awaiting_delivery' || (order.status !== 'cancelled' && (order.payment?.status !== 'paid' || order.payment?.due_chf > 0))
 const qty = (q, unit) => (unit === 'm2' ? `${q} m²` : `${q}×`)
 
 export function Pill({ status, labels }) {
@@ -52,9 +53,15 @@ export function Pill({ status, labels }) {
 function ListingRow({ listing, token, onChanged }) {
   const [price, setPrice] = useState(listing.price_chf)
   const [quantity, setQuantity] = useState(listing.quantity)
+  const [until, setUntil] = useState(listing.available_until ?? '')
+  const [stackable, setStackable] = useState(Boolean(listing.stackable))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const dirty = Number(price) !== listing.price_chf || Number(quantity) !== listing.quantity
+  const dirty =
+    Number(price) !== listing.price_chf ||
+    Number(quantity) !== listing.quantity ||
+    until !== (listing.available_until ?? '') ||
+    stackable !== Boolean(listing.stackable)
 
   const run = async (action) => {
     setBusy(true)
@@ -91,12 +98,30 @@ function ListingRow({ listing, token, onChanged }) {
               <span className="field-label">Quantity</span>
               <input className="input" type="number" min="0" step={listing.unit === 'm2' ? 0.1 : 1} value={quantity} onChange={(e) => setQuantity(e.target.value)} />
             </label>
+            <label className="field">
+              <span className="field-label">Must be collected by</span>
+              <input className="input" type="date" min={listing.available_from || undefined} value={until} onChange={(e) => setUntil(e.target.value)} />
+            </label>
+            <label className="switch-line listing-stack" title="Buyers who need storage pay for less floor when pieces can be stacked">
+              <input type="checkbox" checked={stackable} onChange={(e) => setStackable(e.target.checked)} />
+              <span>Can be stacked</span>
+            </label>
           </div>
         )}
         {error && <p className="error">{error}</p>}
         <div className="row-actions">
           {dirty && (
-            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => run(() => updateListing(token, listing.id, { price_chf: Number(price), quantity: Number(quantity) }))}>
+            <button type="button" className="btn btn-primary" disabled={busy} onClick={() =>
+                run(() =>
+                  updateListing(token, listing.id, {
+                    price_chf: Number(price),
+                    quantity: Number(quantity),
+                    available_until: until || null,
+                    stackable,
+                  }),
+                )
+              }
+            >
               Save
             </button>
           )}
@@ -188,14 +213,35 @@ export function OrderCard({ order, children, showBuyer, full }) {
           </p>
           {order.deliveries.map((d) => (
             <p key={d.leg} className="order-pay note">
-              <span>Delivery by {d.company_name}</span>
+              <span>
+                {d.leg.endsWith('|in') ? 'To storage' : d.leg.endsWith('|out') ? 'From storage' : 'Delivery'} by {d.company_name}
+              </span>
               <span>{formatMoney(d.price_chf)}</span>
+            </p>
+          ))}
+          {(order.storage ?? []).map((st) => (
+            <p key={st.booking_id} className="order-pay note">
+              <span>
+                Storage at {st.space_name}, {st.days} days
+              </span>
+              <span>{formatMoney(st.price_chf)}</span>
             </p>
           ))}
           <p className="order-total">
             <span>Total</span>
             <strong>{formatMoney(order.payment.total_chf)}</strong>
           </p>
+          {(order.extras ?? [])
+            .filter((e) => e.status !== 'refunded')
+            .map((e) => (
+              <p key={e.id} className="order-pay note">
+                <span>
+                  {e.label}
+                  {e.status === 'paid' ? ' (paid)' : e.status === 'credit' ? ' (to be refunded)' : ' (to pay)'}
+                </span>
+                <span>{formatMoney(e.amount_chf)}</span>
+              </p>
+            ))}
         </>
       ) : (
         <p className="order-total">
@@ -244,7 +290,10 @@ export function BuyerOrders() {
       <header className="dash-head">
         <div>
           <h1 className="dash-title">Orders</h1>
-          <p className="lede">Your materials are reserved. Book the delivery, then pay materials and delivery together once every logistics company has accepted.</p>
+          <p className="lede">
+            Your materials are reserved. Book the delivery (and storage, if you need them after the seller's date), then pay everything
+            together once every company has accepted.
+          </p>
         </div>
         <Link to="/market" className="btn btn-secondary">
           Browse the marketplace
@@ -265,7 +314,13 @@ export function BuyerOrders() {
           <div className="row-actions">
             {order.status !== 'cancelled' && logisticsUrl(token) && (
               <a className={`btn ${needsAction(order) ? 'btn-primary' : 'btn-secondary'}`} href={logisticsUrl(token, `/checkout?order=${order.id}`)}>
-                {order.status === 'awaiting_delivery' ? 'Book delivery' : order.payment?.status !== 'paid' ? `Pay ${formatMoney(order.payment.total_chf)}` : 'Delivery details'}
+                {order.status === 'awaiting_delivery'
+                  ? 'Book delivery'
+                  : order.payment?.status !== 'paid'
+                    ? `Pay ${formatMoney(order.payment.total_chf)}`
+                    : order.payment?.due_chf > 0
+                      ? `Pay ${formatMoney(order.payment.due_chf)} more`
+                      : 'Delivery details'}
               </a>
             )}
             {order.status === 'awaiting_delivery' && (

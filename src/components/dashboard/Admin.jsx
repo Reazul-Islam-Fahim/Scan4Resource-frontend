@@ -105,7 +105,7 @@ export function AdminVerification() {
 }
 
 const NEW_ACCOUNT = { name: '', email: '', password: '', role: 'admin', company_name: '' }
-const COMPANY_KINDS = ['corporate', 'logistics']
+const COMPANY_KINDS = ['corporate', 'logistics', 'storage']
 const needsCompany = (role) => role && (role.needs_verification || COMPANY_KINDS.includes(role.kind))
 
 /** One user's role, which only an admin can change. Company roles need a company name. */

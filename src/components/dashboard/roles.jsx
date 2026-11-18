@@ -1,4 +1,4 @@
-import { BagIcon, BuildingIcon, ClockIcon, DocIcon, GridIcon, KeyIcon, ListIcon, ShopIcon, SlidersIcon, TruckIcon, UserIcon, UsersIcon, WalletIcon, ShieldIcon } from '../Icons'
+import { BagIcon, BuildingIcon, ClockIcon, DocIcon, GridIcon, InboxIcon, KeyIcon, ListIcon, ShopIcon, SlidersIcon, TruckIcon, UserIcon, UsersIcon, WalletIcon, WarehouseIcon, ShieldIcon } from '../Icons'
 import { AccountPage } from './Account'
 import { AdminRoles, AdminUsers, AdminVerification } from './Admin'
 import { AdminLogs } from './Logs'
@@ -6,6 +6,7 @@ import { AdminCommission, AdminInsights, AdminLedger, AdminListings, AdminOrders
 import { BuyerOverview, CorporateOverview, LogisticsOverview, SellerOverview } from './Overviews'
 import { AdminPayouts, SellerEarnings } from './Finance'
 import { BuyerOrders, SellerListings, SellerPartners, SellerSales } from './Market'
+import { StorageBookings, StorageOverview, StorageRequests, StorageSpaces } from './Storage'
 import { AdminTenders, CorporateTenders, SellerTenders } from './Tenders'
 
 // Each kind of role's dashboard: the pages in its menu. The first one opens after login. A page with `perm`
@@ -38,6 +39,14 @@ export const DASHBOARDS = {
     { path: '', label: 'Overview', icon: GridIcon, element: <LogisticsOverview /> },
     account,
   ],
+  storage: [
+    { path: '', label: 'Overview', icon: GridIcon, element: <StorageOverview /> },
+    { path: 'requests', label: 'Requests', icon: InboxIcon, element: <StorageRequests />, perm: 'storage.rent' },
+    { path: 'bookings', label: 'Bookings', icon: BagIcon, element: <StorageBookings />, perm: 'storage.rent' },
+    { path: 'spaces', label: 'Spaces', icon: WarehouseIcon, element: <StorageSpaces />, perm: 'storage.rent' },
+    { path: 'payouts', label: 'Balance & payouts', icon: WalletIcon, element: <SellerEarnings />, perm: 'payouts.request' },
+    account,
+  ],
   admin: [
     { path: '', label: 'Overview', icon: GridIcon, element: <AdminInsights />, perm: 'admin.analytics' },
     { path: 'verification', label: 'Verification', icon: ShieldIcon, element: <AdminVerification />, perm: 'admin.verify' },
@@ -54,7 +63,7 @@ export const DASHBOARDS = {
   ],
 }
 
-export const ROLE_ICONS = { buyer: BagIcon, corporate: BuildingIcon, seller: ShopIcon, logistics: TruckIcon, admin: ShieldIcon }
+export const ROLE_ICONS = { buyer: BagIcon, corporate: BuildingIcon, seller: ShopIcon, logistics: TruckIcon, storage: WarehouseIcon, admin: ShieldIcon }
 
 /** The pages this login may open, in menu order. An admin role without analytics opens on its first page. */
 export function pagesFor(auth) {

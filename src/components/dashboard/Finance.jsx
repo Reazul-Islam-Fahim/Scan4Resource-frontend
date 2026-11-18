@@ -37,7 +37,7 @@ function Stat({ label, value, note }) {
 
 export function SellerEarnings() {
   const { data, error, reload, token } = useLoad(fetchEarnings)
-  const { status } = useAuth()
+  const { status, role } = useAuth()
   const [form, setForm] = useState(null)
   const [state, setState] = useState({ busy: false, message: '', error: '' })
 
@@ -66,8 +66,9 @@ export function SellerEarnings() {
       <header>
         <h1 className="dash-title">Balance & payouts</h1>
         <p className="lede">
-          Each sale is credited once it is delivered and paid, minus the {data?.commission_pct ?? 10}% Scan4Reuse commission. Request a payout to your Swiss bank account at any
-          time.
+          {role === 'storage' ? 'Each storage booking' : role === 'logistics' ? 'Each delivery' : 'Each sale'} is credited once the
+          order is delivered and paid, minus the {data?.commission_pct ?? 10}% Scan4Reuse commission. Request a payout to your Swiss bank
+          account at any time.
         </p>
       </header>
       {error && <p className="error">{error}</p>}
@@ -201,6 +202,7 @@ export function AdminPayouts() {
           <Stat label="On its way" value={formatMoney(finance.on_the_way_chf)} note="Paid, not delivered yet" />
           <Stat label="Owed to sellers" value={formatMoney(finance.owed_sellers_chf)} />
           <Stat label="Owed to logistics" value={formatMoney(finance.owed_logistics_chf)} />
+          <Stat label="Owed to storage renters" value={formatMoney(finance.owed_storage_chf ?? 0)} />
           <Stat label="Paid out" value={formatMoney(finance.paid_out_chf)} />
         </div>
       )}
