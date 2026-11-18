@@ -157,4 +157,5 @@ export const PercentIcon = make(
 export const InboxIcon = make(<path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 3h6l1-3h5" />)
 export const ArrowUpIcon = make(<path d="M6 14l6-6 6 6" />)
 export const ArrowDownIcon = make(<path d="M6 10l6 6 6-6" />)
+export const WarehouseIcon = make(<path d="M3 21V9l9-5 9 5v12M7 21v-8h10v8M7 17h10M2 21h20" />)
 export const DoorIcon = make(<path d="M6 21V4h12v17M3 21h18M14.5 12.5v.01" />)

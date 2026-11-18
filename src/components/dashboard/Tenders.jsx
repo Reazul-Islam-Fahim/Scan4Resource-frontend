@@ -258,6 +258,7 @@ function BidCard({ bid, tender, selectable, selected, onToggle, token }) {
             <span className="note block">
               from {bid.pickup.city || 'Switzerland'}
               {bid.ready_from && ` · ready from ${formatDate(bid.ready_from)}`}
+              {bid.ready_until && ` · collect by ${formatDate(bid.ready_until)}`}
             </span>
           </span>
         </label>
@@ -507,6 +508,7 @@ function BidForm({ tender, onSaved }) {
   )
   const [note, setNote] = useState(mine?.note ?? '')
   const [ready, setReady] = useState(mine?.ready_from ?? '')
+  const [until, setUntil] = useState(mine?.ready_until ?? '')
   const action = useAction(onSaved)
   const setLine = (no, key, value) => setLines((ls) => ls.map((l) => (l.no === no ? { ...l, [key]: value } : l)))
   const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.price) || 0), 0)
@@ -516,6 +518,7 @@ function BidForm({ tender, onSaved }) {
     const body = {
       note,
       ready_from: ready || null,
+      ready_until: until || null,
       lines: lines
         .filter((l) => Number(l.quantity) > 0)
         .map((l) => ({ no: l.no, quantity: Number(l.quantity), price_chf: Number(l.price), listing_id: l.listing || null, condition: l.condition, weight_kg: l.weight === '' ? null : Number(l.weight) })),
@@ -577,6 +580,10 @@ function BidForm({ tender, onSaved }) {
         <label className="field">
           <span className="field-label">Ready for pickup from</span>
           <input className="input" type="date" value={ready} onChange={(e) => setReady(e.target.value)} />
+        </label>
+        <label className="field">
+          <span className="field-label">Must be collected by</span>
+          <input className="input" type="date" min={ready || undefined} value={until} onChange={(e) => setUntil(e.target.value)} />
         </label>
         <label className="field grow">
           <span className="field-label">Note to the buyer</span>

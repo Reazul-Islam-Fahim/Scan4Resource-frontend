@@ -9,6 +9,11 @@ export function materialText(item) {
 }
 
 const unique = (list) => [...new Set(list.filter(Boolean))]
+/** The largest measured size among the pieces (cm), so storage and transport plan for the biggest one. */
+const largest = (list, key) => {
+  const sizes = list.map((item) => item[key]).filter(Number.isFinite)
+  return sizes.length ? Math.round(Math.max(...sizes)) : null
+}
 
 function makeRow(label, list) {
   const entry = catalogFor(label)
@@ -28,6 +33,9 @@ function makeRow(label, list) {
     material: materials.length <= 1 ? (materials[0] ?? '') : 'Mixed materials',
     condition: conditions.length === 1 && list.every((item) => item.condition) ? conditions[0] : null,
     image: list.find((item) => item.image)?.image ?? null,
+    widthCm: largest(list, 'widthCm'),
+    heightCm: largest(list, 'heightCm'),
+    depthCm: largest(list, 'depthCm'),
     value: impacts.reduce((sum, impact) => sum + impact.resale, 0),
     co2: impacts.reduce((sum, impact) => sum + impact.co2Kg, 0),
   }

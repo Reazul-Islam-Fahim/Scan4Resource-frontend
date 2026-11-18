@@ -17,6 +17,7 @@ const CATEGORIES = [
   ['payments', 'Payments'],
   ['payouts', 'Payouts'],
   ['tenders', 'Tenders'],
+  ['storage', 'Storage'],
   ['deliveries', 'Deliveries'],
   ['companies', 'Logistics companies'],
   ['admin', 'Admin actions'],
@@ -26,7 +27,7 @@ const LEVELS = [
   ['warning', 'Refused or failed'],
   ['error', 'Server errors'],
 ]
-const ROLES = ['buyer', 'corporate', 'seller', 'logistics', 'admin', 'service']
+const ROLES = ['buyer', 'corporate', 'seller', 'logistics', 'storage', 'admin', 'service']
 const SOURCES = [
   ['', 'Both apps'],
   ['scan4reuse', 'Scan4Reuse'],

@@ -1,6 +1,6 @@
-import { BagIcon, BuildingIcon, ScanIcon, ShieldIcon, TruckIcon } from '../Icons'
+import { BagIcon, BuildingIcon, ScanIcon, ShieldIcon, TruckIcon, WarehouseIcon } from '../Icons'
 
-const ICONS = { buyer: BagIcon, corporate: BuildingIcon, seller: ScanIcon, logistics: TruckIcon, admin: ShieldIcon }
+const ICONS = { buyer: BagIcon, corporate: BuildingIcon, seller: ScanIcon, logistics: TruckIcon, storage: WarehouseIcon, admin: ShieldIcon }
 
 /** The roles people can sign up for, as cards; one is picked. The admin decides which roles are offered. */
 export default function RolePicker({ roles, value, onChange }) {

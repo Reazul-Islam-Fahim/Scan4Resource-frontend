@@ -11,9 +11,10 @@ export const ROLES = [
   { role: 'corporate', name: 'Corporate buyer', text: 'Buy in bulk and run tenders for your company.' },
   { role: 'seller', name: 'Seller', text: 'Scan buildings and sell what can be reused.' },
   { role: 'logistics', name: 'Logistics company', text: 'Pick up and deliver materials for sellers and buyers.' },
+  { role: 'storage', name: 'Storage space renter', text: 'Rent out space where bought materials wait until the buyer can take them.' },
   { role: 'admin', name: 'Admin', text: 'Run the platform: accounts, payouts and commissions.' },
 ]
-export const NEEDS_COMPANY = ['corporate', 'logistics']
+export const NEEDS_COMPANY = ['corporate', 'logistics', 'storage']
 export const roleName = (role) => ROLES.find((r) => r.role === role)?.name ?? role
 
 // What each kind of role can do by default; the admin can change a role's permissions (Roles page). Used only
@@ -23,6 +24,7 @@ export const DEFAULT_PERMISSIONS = {
   corporate: ['market.buy', 'tenders.create'],
   seller: ['market.sell', 'tenders.bid', 'payouts.request'],
   logistics: ['deliveries.handle', 'payouts.request'],
+  storage: ['storage.rent', 'payouts.request'],
   admin: ['admin.verify', 'admin.users', 'admin.roles', 'admin.market', 'admin.finance', 'admin.analytics', 'admin.logs'],
 }
 

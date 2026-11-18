@@ -50,8 +50,8 @@ function StatusChips({ labels, value, onChange }) {
   )
 }
 
-const ROLE_ORDER = ['buyer', 'corporate', 'seller', 'logistics', 'admin']
-const ROLE_COLORS = { buyer: '#018058', corporate: '#5fb594', seller: '#0b4f3b', logistics: '#c08a2b', admin: '#9bb3aa' }
+const ROLE_ORDER = ['buyer', 'corporate', 'seller', 'logistics', 'storage', 'admin']
+const ROLE_COLORS = { buyer: '#018058', corporate: '#5fb594', seller: '#0b4f3b', logistics: '#c08a2b', storage: '#7a6a3a', admin: '#9bb3aa' }
 const ORDER_BARS = { awaiting_delivery: 'Not booked', delivery_booked: 'Booked', delivered: 'Delivered', cancelled: 'Cancelled' }
 
 const lastTwo = (series) => ({ now: series[series.length - 1], before: series[series.length - 2] })
@@ -317,13 +317,29 @@ export function AdminCommission() {
   const [state, setState] = useState({ busy: false, message: '', error: '' })
 
   useEffect(() => {
-    if (data && !form) setForm({ seller_pct: String(data.seller_pct), logistics_pct: String(data.logistics_pct), note: '' })
+    if (data && !form)
+      setForm({
+        seller_pct: String(data.seller_pct),
+        logistics_pct: String(data.logistics_pct),
+        storage_pct: String(data.storage_pct ?? 10),
+        late_fee_pct: String(data.late_fee_pct ?? 5),
+        note: '',
+      })
   }, [data, form])
 
   const submit = async (e) => {
     e.preventDefault()
-    const rates = { seller_pct: Number(form.seller_pct), logistics_pct: Number(form.logistics_pct), note: form.note }
-    if (!window.confirm(`Charge sellers ${rates.seller_pct}% and logistics companies ${rates.logistics_pct}% on orders paid from now on?`)) return
+    const rates = {
+      seller_pct: Number(form.seller_pct),
+      logistics_pct: Number(form.logistics_pct),
+      storage_pct: Number(form.storage_pct),
+      late_fee_pct: Number(form.late_fee_pct),
+      note: form.note,
+    }
+    const question =
+      `Charge sellers ${rates.seller_pct}%, logistics companies ${rates.logistics_pct}% and storage renters ${rates.storage_pct}% ` +
+      `on orders paid from now on, and charge late buyers ${rates.late_fee_pct}% extra on extensions asked for from now on?`
+    if (!window.confirm(question)) return
     setState({ busy: true, message: '', error: '' })
     try {
       await saveCommission(token, rates)
@@ -340,13 +356,18 @@ export function AdminCommission() {
     <section className="dash-section">
       <header>
         <h1 className="dash-title">Commission</h1>
-        <p className="lede">What Scan4Reuse keeps from each sale and each delivery. A change applies to orders paid after it; paid orders keep their rates.</p>
+        <p className="lede">
+          What Scan4Reuse keeps from each sale, delivery and storage booking, and what a buyer pays on top when they extend storage. A
+          change applies to orders paid after it; paid orders keep their rates.
+        </p>
       </header>
       {error && <p className="error">{error}</p>}
       {data && (
         <div className="dash-stats">
           <Stat label="From sellers" value={`${data.seller_pct}%`} note="of the materials price" />
           <Stat label="From logistics companies" value={`${data.logistics_pct}%`} note="of the delivery price" />
+          <Stat label="From storage renters" value={`${data.storage_pct}%`} note="of the storage price" />
+          <Stat label="Late-buyer fee" value={`${data.late_fee_pct}%`} note="on top of extra storage days and the moved trip" />
         </div>
       )}
       {form && (
@@ -360,6 +381,16 @@ export function AdminCommission() {
             <label className="field">
               <span className="field-label">Logistics companies (%)</span>
               <input className="input" type="number" min="0" max="50" step="0.5" required value={form.logistics_pct} onChange={set('logistics_pct')} />
+            </label>
+          </div>
+          <div className="field-row">
+            <label className="field">
+              <span className="field-label">Storage renters (%)</span>
+              <input className="input" type="number" min="0" max="50" step="0.5" required value={form.storage_pct} onChange={set('storage_pct')} />
+            </label>
+            <label className="field">
+              <span className="field-label">Late-buyer fee (%)</span>
+              <input className="input" type="number" min="0" max="100" step="0.5" required value={form.late_fee_pct} onChange={set('late_fee_pct')} />
             </label>
           </div>
           <label className="field">
@@ -384,6 +415,8 @@ export function AdminCommission() {
                   <th>From</th>
                   <th className="num">Sellers</th>
                   <th className="num">Logistics</th>
+                  <th className="num">Storage</th>
+                  <th className="num">Late fee</th>
                   <th>Set by</th>
                 </tr>
               </thead>
@@ -396,6 +429,8 @@ export function AdminCommission() {
                     </td>
                     <td className="num">{h.seller_pct}%</td>
                     <td className="num">{h.logistics_pct}%</td>
+                    <td className="num">{h.storage_pct}%</td>
+                    <td className="num">{h.late_fee_pct}%</td>
                     <td>
                       {h.set_by_name}
                       {h.note && <span className="note block">{h.note}</span>}
@@ -411,7 +446,7 @@ export function AdminCommission() {
   )
 }
 
-const KIND = { sale: 'Sale', delivery: 'Delivery', payout: 'Payout' }
+const KIND = { sale: 'Sale', delivery: 'Delivery', storage: 'Storage', payout: 'Payout' }
 
 export function AdminLedger() {
   const { data, error } = useLoad(fetchLedger)

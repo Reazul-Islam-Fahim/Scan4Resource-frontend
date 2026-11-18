@@ -16,6 +16,9 @@ const CONDITIONS = [
   ['poor', 'Poor'],
 ]
 const COMMISSION = 0.1
+const NOT_STACKABLE = ['windows', 'doors'] // stored side by side unless the seller says they can be stacked
+const cm = (value) => (Number.isFinite(value) ? String(value) : '')
+const size = (value) => (value === '' || value == null ? null : Number(value))
 
 /** One draft listing per report row, with the catalog's suggested price. */
 const draftsFrom = (report) =>
@@ -32,6 +35,10 @@ const draftsFrom = (report) =>
       quantity: row.quantity,
       price: entry.listUnit ?? 0,
       image: row.image,
+      width: cm(row.widthCm),
+      height: cm(row.heightCm),
+      depth: cm(row.depthCm),
+      stackable: !NOT_STACKABLE.includes(entry.category ?? 'other'),
     }
   })
 
@@ -99,6 +106,10 @@ export default function SellFromScan({ report, scanId, title, onBack }) {
           quantity: Number(d.quantity),
           price_chf: Number(d.price),
           image: d.image,
+          width_cm: size(d.width),
+          height_cm: size(d.height),
+          depth_cm: size(d.depth),
+          stackable: d.stackable,
           scan_id: scanId,
           item_key: d.key,
           available_from: window_.from || null,
@@ -188,6 +199,32 @@ export default function SellFromScan({ report, scanId, title, onBack }) {
                     <label className="field">
                       <span className="field-label">Price per {d.unit === 'm2' ? 'm²' : 'piece'} (CHF)</span>
                       <input className="input" type="number" min="0" step="0.05" value={d.price} onChange={(e) => edit(d.key, { price: e.target.value })} required />
+                    </label>
+                    <fieldset className="field sell-size">
+                      <legend className="field-label">{d.unit === 'm2' ? 'Piece size (cm), thickness last' : 'Size of one piece (cm)'}</legend>
+                      <span className="sell-size-inputs">
+                        {[
+                          ['width', 'Width'],
+                          ['height', 'Height'],
+                          ['depth', d.unit === 'm2' ? 'Thickness' : 'Depth'],
+                        ].map(([key, label]) => (
+                          <input
+                            key={key}
+                            className="input"
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            aria-label={`${label} in cm`}
+                            placeholder={label}
+                            value={d[key]}
+                            onChange={(e) => edit(d.key, { [key]: e.target.value })}
+                          />
+                        ))}
+                      </span>
+                    </fieldset>
+                    <label className="switch-line sell-stack">
+                      <input type="checkbox" checked={d.stackable} onChange={(e) => edit(d.key, { stackable: e.target.checked })} />
+                      <span>Can be stacked</span>
                     </label>
                   </div>
                 )}

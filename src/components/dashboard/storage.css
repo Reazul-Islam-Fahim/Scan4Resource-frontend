@@ -1,0 +1,168 @@
+/* The storage space renter's pages (Storage.jsx). Built on the dashboard cards in dashboard.css. */
+
+.st-card {
+  display: grid;
+  gap: 10px;
+}
+
+.st-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+
+.st-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.st-facts dd {
+  margin: 2px 0 0;
+  display: grid;
+  gap: 6px;
+}
+
+.st-people {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.st-person {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.st-decline {
+  display: grid;
+  gap: 8px;
+}
+
+.st-closed summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.st-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.st-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.st-photo {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.st-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.st-photo button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.st-photo-add {
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  cursor: pointer;
+}
+
+.st-photo-add input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.st-space {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.st-space .st-facts {
+  flex: 1;
+}
+
+.st-space-photo {
+  width: 120px;
+  height: 90px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: none;
+}
+
+.st-calendar {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 44px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.st-calendar i {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px;
+  background: rgba(1, 128, 88, 0.15);
+}
+
+.st-calendar i.is-used {
+  background: var(--green);
+}
+
+.st-mini {
+  display: grid;
+  gap: 4px;
+  padding: 8px 2px;
+}
+
+@media (max-width: 560px) {
+  .st-space {
+    flex-direction: column;
+  }
+
+  .st-space-photo {
+    width: 100%;
+    height: 140px;
+  }
+}

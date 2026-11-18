@@ -216,7 +216,13 @@ export function Track({ steps, at }) {
 // An average Swiss car emits about 0.17 kg CO2 per km driven (fleet average, including older cars).
 const CAR_KG_PER_KM = 0.17
 
-const HOW = { buying: 'by buying reused', selling: 'by selling', transporting: 'by transporting reused materials', platform: 'on Scan4Reuse' }
+const HOW = {
+  buying: 'by buying reused',
+  selling: 'by selling',
+  transporting: 'by transporting reused materials',
+  storing: 'by storing reused materials',
+  platform: 'on Scan4Reuse',
+}
 
 /** CO₂ that reuse saved: the figure, the material behind it, a car comparison and the last six months. */
 export function Co2Card({ impact, scope, compact = false, what }) {
